@@ -613,7 +613,7 @@ export default function HomePage() {
                 href="/upload"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 px-7 text-sm font-semibold text-white shadow hover:bg-blue-500 active:scale-95 transition-all"
               >
-                <span>Upload Contract — Free Review</span>
+                <span>Upload Contract</span>
                 <span>→</span>
               </Link>
             </div>
