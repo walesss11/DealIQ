@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  }
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  name       String?
+  userType   String?    @map("user_type")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  contracts  Contract[]
+  payments   Payment[]
+
+  @@map("users")
+}
+
+model Contract {
+  id           String            @id @default(cuid())
+  userId       String?           @map("user_id")
+  filename     String
+  contractType String?           @map("contract_type")
+  status       String            @default("pending") // pending | processing | complete | error
+  createdAt    DateTime          @default(now()) @map("created_at")
+  user         User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions     ContractVersion[]
+
+  @@map("contracts")
+  @@index([userId])
+}
+
+model ContractVersion {
+  id            String    @id @default(cuid())
+  contractId    String    @map("contract_id")
+  versionNumber Int       @map("version_number") @default(1)
+  fileReference String    @map("file_reference") // Supabase Storage path
+  extractedText String?   @map("extracted_text") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  contract      Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  clauses       Clause[]
+  reviews       Review[]
+
+  @@map("contract_versions")
+  @@unique([contractId, versionNumber])
+}
+
+model Clause {
+  id                String          @id @default(cuid())
+  contractVersionId String          @map("contract_version_id")
+  title             String?
+  section           String?
+  text              String          @db.Text
+  pageNumber        Int?            @map("page_number")
+  position          Int             @default(0) // ordinal position in document
+  clauseType        String?         @map("clause_type")
+  contractVersion   ContractVersion @relation(fields: [contractVersionId], references: [id], onDelete: Cascade)
+  findings          Finding[]
+
+  @@map("clauses")
+  @@unique([contractVersionId, position])
+}
+
+model Review {
+  id                String          @id @default(cuid())
+  contractVersionId String          @map("contract_version_id")
+  status            String          @default("pending") // pending | running | complete | error
+  overallAttention  String?         @map("overall_attention") // JSON summary counts
+  modelVersion      String?         @map("model_version")
+  classificationResult String?      @map("classification_result") @db.Text // JSON
+  userRole          String?         @map("user_role")
+  userContractType  String?         @map("user_contract_type")
+  userPriorities    String?         @map("user_priorities") // JSON array
+  createdAt         DateTime        @default(now()) @map("created_at")
+  completedAt       DateTime?       @map("completed_at")
+  contractVersion   ContractVersion @relation(fields: [contractVersionId], references: [id], onDelete: Cascade)
+  findings          Finding[]
+  payments          Payment[]
+
+  // Immutability: Reviews are never updated after creation (except status/completedAt)
+  // A re-run creates a NEW Review linked to the same ContractVersion.
+  @@map("reviews")
+  @@index([contractVersionId, createdAt])
+}
+
+model Finding {
+  id               String   @id @default(cuid())
+  reviewId         String   @map("review_id")
+  clauseId         String   @map("clause_id")
+  category         String   // payment | deliverables | content_rights | exclusivity | termination | liability | image_likeness | general
+  severity         String   // high | worth_reviewing | understand | no_issue
+  title            String
+  // Three-layer format (spec Section 7.2)
+  whatItSays       String   @map("what_it_says") @db.Text // Layer 1: factual restatement
+  whatItMeans      String   @map("what_it_means") @db.Text // Layer 2: plain-language meaning
+  whatToConsider   String   @map("what_to_consider") @db.Text // Layer 3: actionable suggestion
+  // Source validation (spec Section 6)
+  sourceValidated  Boolean  @default(false) @map("source_validated")
+  confidence       Float?   // 0.0-1.0
+  rejectionReason  String?  @map("rejection_reason") @db.Text
+  // Negotiation options & suggested alternative wording (spec Section 7.4)
+  negotiationOptions String?  @map("negotiation_options") @db.Text // JSON array of options
+  suggestedRewrite   String?  @map("suggested_rewrite") @db.Text
+  emailSnippet       String?  @map("email_snippet") @db.Text
+  // Cross-clause linkage (spec Section 5.1)
+  isCrossClause      Boolean  @default(false) @map("is_cross_clause")
+  relatedClauseIds   String?  @map("related_clause_ids") @db.Text // JSON array
+  createdAt        DateTime @default(now()) @map("created_at")
+  review           Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  clause           Clause   @relation(fields: [clauseId], references: [id], onDelete: Cascade)
+
+  @@map("findings")
+  @@index([reviewId, sourceValidated])
+  @@index([clauseId])
+}
+
+model Payment {
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  reviewId            String   @map("review_id")
+  amount              Float
+  currency            String   @default("USD")
+  provider            String   // stripe | paystack
+  status              String   // pending | paid | failed | refunded
+  transactionReference String? @map("transaction_reference")
+  createdAt           DateTime @default(now()) @map("created_at")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review              Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+  @@index([userId])
+  @@index([reviewId])
+}
