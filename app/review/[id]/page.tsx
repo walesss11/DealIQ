@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Finding } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { ReviewDashboardClient } from "./ReviewDashboardClient";
 import { FindingData } from "./FindingCard";
@@ -44,17 +45,17 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
 
   const classification = parseClassification(review.classificationResult);
   const counts = review.findings.reduce(
-    (result, finding) => ({ ...result, [finding.severity]: (result[finding.severity] ?? 0) + 1 }),
+    (result: Record<string, number>, finding: Finding) => ({ ...result, [finding.severity]: (result[finding.severity] ?? 0) + 1 }),
     {} as Record<string, number>
   );
 
   const highCount = counts["high"] ?? 0;
   const worthCount = counts["worth_reviewing"] ?? 0;
   const understandCount = counts["understand"] ?? 0;
-  const crossClauseCount = review.findings.filter((f) => f.isCrossClause).length;
+  const crossClauseCount = review.findings.filter((f: Finding) => f.isCrossClause).length;
 
   const firstFor = (category: string) =>
-    review.findings.find((finding) => finding.category === category && !finding.isCrossClause);
+    review.findings.find((finding: Finding) => finding.category === category && !finding.isCrossClause);
 
   const dealTerms = [
     {

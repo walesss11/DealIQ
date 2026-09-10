@@ -1,3 +1,4 @@
+import type { Finding } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { askDealIQChat, ChatFocusContext } from "@/lib/ai/chat";
@@ -72,7 +73,7 @@ export async function POST(
     }
 
     const firstFor = (category: string) =>
-      review?.findings.find((f) => f.category === category && !f.isCrossClause);
+      review?.findings.find((f: Finding) => f.category === category && !f.isCrossClause);
 
     const dealSnapshot = [
       {
