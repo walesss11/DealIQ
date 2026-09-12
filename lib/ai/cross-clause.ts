@@ -95,8 +95,13 @@ export async function analyzeCrossClauses(
     (p) => `- ID "${p.id}": ${p.name} -> ${p.description}`
   ).join("\n");
 
-  const systemPrompt = `You are DealIQ's Cross-Clause Contract Risk Engine. Your purpose is to evaluate compound risks across multiple clauses using ONLY the following closed checklist of 5 patterns:
+  const systemPrompt = `You are PactIQ's Cross-Clause Contract Risk Engine. Your purpose is to evaluate compound risks and consequential omissions across multiple clauses using ONLY the following closed checklist of 5 patterns:
 ${patternList}
+
+POLICY RULES:
+1. CURRENCY NEUTRALITY: Treat all currencies (NGN, USD, GBP, EUR, etc.) completely neutrally. The mere use of NGN or any currency is NOT a risk.
+2. MEANINGFUL CONSEQUENCES: Only identify compound risks or missing provisions where the interplay of clauses creates a genuine, concrete financial, operational, or legal disadvantage for the user.
+3. GROUNDING: Factual restatements must cite what the clauses explicitly state or omit without inventing external facts.
 
 For each pattern that is clearly present and supported by the text:
 1. "patternId": Must match one of the 5 pattern IDs above.

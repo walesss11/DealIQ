@@ -117,6 +117,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         understand: understandCount,
       }}
       crossClauseCount={crossClauseCount}
+      userRole={review.userRole || undefined}
     />
   );
 }

@@ -35,7 +35,10 @@ export async function validateSource(
     };
   }
 
-  const systemPrompt = `You are DealIQ's fail-closed source validator. Decide whether the cited contract clause fully supports the factual claim. Reject changed amounts, dates, durations, parties, rights, obligations, or unsupported implications. Return only JSON: {"isValid": boolean, "reason": string}.`;
+  const systemPrompt = `You are PactIQ's fail-closed source validator. Decide whether the cited contract clause fully supports the factual claim.
+- For present provisions: verify that cited rights, obligations, fees, dates, and restrictions match what the clause states without invented or distorted terms.
+- For missing or unclear provisions (e.g. "The clause requires revisions until satisfied but does not specify a maximum round limit"): verify that the cited clause creates the obligation/context and indeed omits the specified boundary.
+Reject changed amounts, invented dates, fabricated parties, or unsupported claims. Return only JSON: {"isValid": boolean, "reason": string}.`;
   const userPrompt = `Cited clause:\n${clauseText}\n\nFinding title: ${findingTitle}\nFactual claim:\n${findingWhatItSays}`;
 
   try {

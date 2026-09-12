@@ -62,11 +62,13 @@ const severityMeta: Record<
 interface FindingCardProps {
   finding: FindingData;
   index: number;
+  onAskPactIQ?: (finding: FindingData) => void;
   onAskDealIQ?: (finding: FindingData) => void;
   onAskClause?: (clause: FindingData["clause"]) => void;
 }
 
-export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: FindingCardProps) {
+export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskClause }: FindingCardProps) {
+  const askHandler = onAskPactIQ || onAskDealIQ;
   const [copiedType, setCopiedType] = useState<"rewrite" | "email" | null>(null);
   const [activeTab, setActiveTab] = useState<"analysis" | "negotiate">("analysis");
 
@@ -81,11 +83,25 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
     }
   }
 
-  const hasNegotiation = optionsList.length > 0 || finding.suggestedRewrite || finding.emailSnippet;
+  const cleanText = (str?: string | null) => {
+    if (!str) return "";
+    return str
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/__(.*?)__/g, "$1")
+      .replace(/_(.*?)_/g, "$1")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/`{1,3}(.*?)`{1,3}/g, "$1")
+      .trim();
+  };
+
+  const cleanRewrite = cleanText(finding.suggestedRewrite);
+  const cleanEmail = cleanText(finding.emailSnippet);
+  const hasNegotiation = optionsList.length > 0 || cleanRewrite.length > 0 || cleanEmail.length > 0;
 
   async function handleCopy(text: string, type: "rewrite" | "email") {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(cleanText(text));
       setCopiedType(type);
       setTimeout(() => setCopiedType(null), 2500);
     } catch (e) {
@@ -117,14 +133,14 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
             Finding #{index + 1} · {finding.category.replaceAll("_", " ")}
           </span>
 
-          {onAskDealIQ && (
+          {askHandler && (
             <button
               type="button"
-              onClick={() => onAskDealIQ(finding)}
+              onClick={() => askHandler(finding)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/80 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95 transition"
             >
               <span>✨</span>
-              <span>Ask DealIQ</span>
+              <span>Ask PactIQ</span>
             </button>
           )}
         </div>
@@ -241,7 +257,7 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
           )}
 
           {/* Suggested Replacement Clause Language */}
-          {finding.suggestedRewrite && (
+          {cleanRewrite && (
             <div className="rounded-xl border border-blue-200 bg-blue-50/30 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-blue-900">
@@ -249,7 +265,7 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
                 </h4>
                 <button
                   type="button"
-                  onClick={() => handleCopy(finding.suggestedRewrite!, "rewrite")}
+                  onClick={() => handleCopy(cleanRewrite, "rewrite")}
                   className="inline-flex items-center gap-1.5 rounded-md bg-white border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-800 shadow-xs hover:bg-blue-50 active:scale-95 transition"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -259,13 +275,13 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
                 </button>
               </div>
               <pre className="mt-3 whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-800 bg-white p-3.5 rounded-lg border border-slate-200">
-                {finding.suggestedRewrite}
+                {cleanRewrite}
               </pre>
             </div>
           )}
 
           {/* Ready-to-Send Email Proposal Draft */}
-          {finding.emailSnippet && (
+          {cleanEmail && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -273,7 +289,7 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
                 </h4>
                 <button
                   type="button"
-                  onClick={() => handleCopy(finding.emailSnippet!, "email")}
+                  onClick={() => handleCopy(cleanEmail, "email")}
                   className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -283,7 +299,7 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
                 </button>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap bg-white p-3.5 rounded-lg border border-slate-200 font-sans">
-                {finding.emailSnippet}
+                {cleanEmail}
               </p>
             </div>
           )}
@@ -315,7 +331,7 @@ export function FindingCard({ finding, index, onAskDealIQ, onAskClause }: Findin
                 onClick={() => onAskClause(finding.clause)}
                 className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline"
               >
-                Ask DealIQ about this clause →
+                Ask PactIQ about this clause →
               </button>
             )}
           </div>

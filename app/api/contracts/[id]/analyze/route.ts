@@ -130,13 +130,15 @@ export async function POST(
 
       if (validation.isValid && (finding.severity === "high" || finding.severity === "worth_reviewing")) {
         try {
+          const clauseSection = clause.section || clause.title || `Clause #${clause.position + 1}`;
           const neg = await generateNegotiation(
             finding.title,
             clause.text,
             finding.whatItSays,
             finding.whatItMeans,
             finding.whatToConsider,
-            classification.confirmedContractType
+            classification.confirmedContractType,
+            clauseSection
           );
           negotiationOptions = JSON.stringify(neg.options);
           suggestedRewrite = neg.suggestedWording;
@@ -197,13 +199,15 @@ export async function POST(
 
       if (validation.isValid && (crossFinding.severity === "high" || crossFinding.severity === "worth_reviewing")) {
         try {
+          const crossClauseSection = primaryClause.section || primaryClause.title || `Clause #${primaryClause.position + 1}`;
           const neg = await generateNegotiation(
             crossFinding.title,
             primaryClause.text,
             crossFinding.whatItSays,
             crossFinding.whatItMeans,
             crossFinding.whatToConsider,
-            classification.confirmedContractType
+            classification.confirmedContractType,
+            crossClauseSection
           );
           negotiationOptions = JSON.stringify(neg.options);
           suggestedRewrite = neg.suggestedWording;

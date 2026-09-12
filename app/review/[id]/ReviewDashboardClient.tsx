@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FindingCard, type FindingData } from "./FindingCard";
-import { AskDealIQDrawer } from "./AskDealIQDrawer";
+import { AskPactIQDrawer } from "./AskPactIQDrawer";
+import { FullNegotiationModal } from "./FullNegotiationModal";
+import { RedraftModal } from "./RedraftModal";
 import { ChatFocusContext } from "@/lib/ai/chat";
 
 export interface ReviewDashboardProps {
@@ -12,6 +14,7 @@ export interface ReviewDashboardProps {
   contractCreatedAt: string;
   contractType: string;
   confirmedContractType?: string;
+  userRole?: string;
   findings: FindingData[];
   dealTerms: Array<{
     label: string;
@@ -42,12 +45,15 @@ export function ReviewDashboardClient({
   contractCreatedAt,
   contractType,
   confirmedContractType,
+  userRole,
   findings,
   dealTerms,
   counts,
   crossClauseCount,
 }: ReviewDashboardProps) {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isNegotiationModalOpen, setIsNegotiationModalOpen] = useState(false);
+  const [isRedraftModalOpen, setIsRedraftModalOpen] = useState(false);
   const [focusContext, setFocusContext] = useState<ChatFocusContext | undefined>({
     type: "deal",
     label: "Whole Agreement Overview",
@@ -91,10 +97,10 @@ export function ReviewDashboardClient({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm shadow-xs group-hover:bg-blue-900 transition-colors">
-              D
+              P
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold tracking-tight text-slate-950">DealIQ</span>
+              <span className="text-base font-bold tracking-tight text-slate-950">PactIQ</span>
               <span className="text-[10px] uppercase font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md hidden sm:inline">
                 Contract Review
               </span>
@@ -102,7 +108,7 @@ export function ReviewDashboardClient({
           </Link>
 
           <div className="flex items-center gap-2.5">
-            {/* Ask DealIQ Main Header Button */}
+            {/* Ask PactIQ Main Header Button */}
             <button
               type="button"
               onClick={() =>
@@ -114,8 +120,16 @@ export function ReviewDashboardClient({
               className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 active:scale-95 transition"
             >
               <span>✨</span>
-              <span>Ask DealIQ</span>
+              <span>Ask PactIQ</span>
             </button>
+
+            <Link
+              href="/deals"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition"
+            >
+              <span>📁</span>
+              <span className="hidden sm:inline">Your Deals</span>
+            </Link>
 
             <Link
               href="/upload"
@@ -184,13 +198,13 @@ export function ReviewDashboardClient({
             </div>
           </div>
 
-          {/* Quick Summary Banner with Ask DealIQ CTA */}
+          {/* Quick Summary Banner with Ask PactIQ CTA */}
           <div className="mt-6 rounded-xl bg-slate-50 border border-slate-200/80 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Executive Takeaway</h3>
               <p className="mt-1 text-xs sm:text-sm text-slate-700 leading-relaxed">
                 {highCount > 0
-                  ? `DealIQ identified ${highCount} high-attention issue${highCount > 1 ? "s" : ""} requiring modification before signing, along with ${worthCount} term${worthCount > 1 ? "s" : ""} worth clarifying.`
+                  ? `PactIQ identified ${highCount} high-attention issue${highCount > 1 ? "s" : ""} requiring modification before signing, along with ${worthCount} term${worthCount > 1 ? "s" : ""} worth clarifying.`
                   : worthCount > 0
                   ? `The agreement contains standard provisions with ${worthCount} point${worthCount > 1 ? "s" : ""} worth reviewing to ensure fair alignment.`
                   : "No high-risk clauses or aggressive multi-term traps were identified in the extracted text."}
@@ -206,7 +220,7 @@ export function ReviewDashboardClient({
               }
               className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-2xs hover:bg-slate-50 hover:text-blue-700 active:scale-95 transition"
             >
-              <span>✨ Ask DealIQ about this deal</span>
+              <span>✨ Ask PactIQ about this deal</span>
               <span>→</span>
             </button>
           </div>
@@ -236,7 +250,7 @@ export function ReviewDashboardClient({
               }
               className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline flex items-center gap-1"
             >
-              <span>✨ Ask DealIQ about these terms</span>
+              <span>✨ Ask PactIQ about these terms</span>
             </button>
           </div>
 
@@ -271,7 +285,7 @@ export function ReviewDashboardClient({
                     }
                     className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 opacity-80 group-hover:opacity-100 transition"
                   >
-                    Ask DealIQ →
+                    Ask PactIQ →
                   </button>
                 </div>
               </div>
@@ -439,7 +453,7 @@ export function ReviewDashboardClient({
                   key={finding.id}
                   finding={finding}
                   index={idx}
-                  onAskDealIQ={(f) =>
+                  onAskPactIQ={(f) =>
                     openChatWithFocus({
                       type: "finding",
                       findingId: f.id,
@@ -458,9 +472,94 @@ export function ReviewDashboardClient({
             )}
           </div>
         </section>
+
+        {/* Section: Take Action (Overall Contract Actions) */}
+        <section className="mt-12 card-surface rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-white via-slate-50/50 to-blue-50/20 border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-blue-800">
+                Take Action
+              </span>
+              <h2 className="mt-2 text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight flex items-center gap-2">
+                <span>⚡</span> Execute Your Contract Strategy
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-slate-600">
+                Now that you&apos;ve reviewed all provisions, transform PactIQ&apos;s findings into ready-to-send negotiation communication or a revised draft.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {/* Action 1: Generate Full Negotiation Message */}
+            <div className="group flex flex-col justify-between rounded-xl border border-blue-200/90 bg-white p-5 shadow-2xs hover:border-blue-400 hover:shadow-md transition-all">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-lg shadow-xs group-hover:scale-105 transition-transform">
+                    ✉️
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-950 group-hover:text-blue-700 transition-colors">
+                      Generate Full Negotiation Message
+                    </h3>
+                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
+                      Role-Adapted Email Draft
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                  Create one cohesive, professional message covering the key terms you may want to renegotiate. Consolidates high-priority findings and adjusts tone to your role.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsNegotiationModalOpen(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition"
+                >
+                  <span>✨ Generate Full Negotiation Message</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Action 2: Redraft Contract */}
+            <div className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-400 hover:shadow-md transition-all">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white font-bold text-lg shadow-xs group-hover:scale-105 transition-transform">
+                    📝
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-950 group-hover:text-slate-800 transition-colors">
+                      Redraft Contract
+                    </h3>
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
+                      Targeted Clause Revisions
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                  Create a revised version of the contract based on the changes you select. Preserves the original contract intact while applying balanced replacement language.
+                </p>
+              </div>
+
+              <div className="mt-5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsRedraftModalOpen(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 active:scale-[0.98] transition"
+                >
+                  <span>📝 Redraft Contract</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Persistent Floating "Ask DealIQ" Trigger for Fast Access */}
+      {/* Persistent Floating "Ask PactIQ" Trigger for Fast Access */}
       <div className="fixed bottom-6 right-6 z-40">
         <button
           type="button"
@@ -473,12 +572,12 @@ export function ReviewDashboardClient({
           className="flex items-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-xl hover:bg-slate-800 hover:scale-[1.03] active:scale-95 transition-all"
         >
           <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-          <span>✨ Ask DealIQ</span>
+          <span>✨ Ask PactIQ</span>
         </button>
       </div>
 
-      {/* Ask DealIQ Side Drawer */}
-      <AskDealIQDrawer
+      {/* Ask PactIQ Side Drawer */}
+      <AskPactIQDrawer
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         contractId={contractId}
@@ -488,6 +587,27 @@ export function ReviewDashboardClient({
         topConcernSummary={topConcernSummary}
       />
 
+      {/* Feature 1: Full Negotiation Message Modal */}
+      <FullNegotiationModal
+        isOpen={isNegotiationModalOpen}
+        onClose={() => setIsNegotiationModalOpen(false)}
+        contractId={contractId}
+        filename={filename}
+        userRole={userRole}
+        contractType={contractType}
+      />
+
+      {/* Feature 2: Redraft Contract Modal */}
+      <RedraftModal
+        isOpen={isRedraftModalOpen}
+        onClose={() => setIsRedraftModalOpen(false)}
+        contractId={contractId}
+        filename={filename}
+        findings={findings}
+        userRole={userRole}
+        contractType={contractType}
+      />
+
       {/* Persistent Legal Notice & Disclaimer */}
       <footer className="mt-16 border-t border-slate-200 bg-white px-6 py-10 text-center text-xs text-slate-500 sm:px-8">
         <div className="mx-auto max-w-4xl space-y-3">
@@ -495,10 +615,10 @@ export function ReviewDashboardClient({
             Legal Disclaimer & Terms of Use
           </p>
           <p className="leading-relaxed text-[11px]">
-            DealIQ provides automated analysis for informational purposes to help users understand contract terms, identify potential concerns, and prepare negotiation points. DealIQ is not a law firm and does not provide legal advice, opinions, or recommendations about legal rights or strategies.
+            PactIQ provides automated analysis for informational purposes to help users understand contract terms, identify potential concerns, and prepare negotiation points. PactIQ is not a law firm and does not provide legal advice, opinions, or recommendations about legal rights or strategies.
           </p>
           <p className="text-slate-400 text-[10px]">
-            © {new Date().getFullYear()} DealIQ. All analysis grounded in document text.
+            © {new Date().getFullYear()} PactIQ. All analysis grounded in document text.
           </p>
         </div>
       </footer>

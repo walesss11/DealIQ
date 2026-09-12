@@ -1,4 +1,5 @@
 import { callLLM, ChatMessage } from "./provider";
+import { stripMarkdown } from "./generate-negotiation";
 
 export interface ChatFocusContext {
   type: "deal" | "finding" | "clause";
@@ -61,7 +62,7 @@ export interface ChatResponsePayload {
   negotiationAction?: ChatNegotiationAction | null;
 }
 
-export async function askDealIQChat(
+export async function askPactIQChat(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   contractContext: ChatContractContext,
   focusContext?: ChatFocusContext
@@ -122,7 +123,7 @@ Full Clause Text:
     ? dealSnapshot.map((s) => `- ${s.label}: ${s.value}`).join("\n")
     : "N/A";
 
-  const systemPrompt = `You are "Ask DealIQ", the intelligent, context-aware contract assistant for DealIQ.
+  const systemPrompt = `You are "Ask PactIQ", the intelligent, context-aware contract assistant for PactIQ.
 Your role is to help the user understand their contract, assess risks, clarify legal terms in plain English, and prepare actionable negotiation strategies.
 
 === CONTRACT REVIEW METADATA ===
@@ -134,7 +135,7 @@ Your role is to help the user understand their contract, assess risks, clarify l
 === DEAL SNAPSHOT ===
 ${snapshotText}
 
-=== DEALIQ FINDINGS (${findings.length} total) ===
+=== PACTIQ FINDINGS (${findings.length} total) ===
 ${findingsSummary}
 
 === CONTRACT CLAUSES SUMMARY ===
@@ -143,21 +144,23 @@ ${clausesIndex}
 ${focusSectionPrompt}
 
 === CORE INSTRUCTIONS ===
-1. GROUNDED FACTUALITY: Only state factual terms that are present in the provided contract text and DealIQ findings. NEVER fabricate, guess, or hallucinate terms, amounts, dates, or obligations.
-2. MISSING TERMS: If the user asks about a term (e.g. "Is there a kill fee?", "Does it mention AI rights?") and the contract does NOT have it, state clearly that no such term is found in the agreement.
-3. SCANNABLE FORMATTING: Use clean markdown with short paragraphs, bullet points, bold key concepts, and structured headers where helpful. Avoid walls of unbroken text.
-4. MOVE FROM EXPLANATION TO ACTION: When addressing a concern or negotiation question, guide the user through:
-   - What the contract currently says and means
+1. GROUNDED FACTUALITY: Only state factual terms that are present in the provided contract text and PactIQ findings. NEVER fabricate, guess, or hallucinate terms, amounts, dates, or obligations.
+2. CURRENCY-NEUTRAL POLICY: Treat NGN, USD, GBP, EUR, and all currencies completely neutrally. The mere use of NGN or any currency is NOT a risk. Do NOT suggest changing NGN to USD, pegging to USD, or adding FX adjustments simply because it is a local currency or counterparty is international. Only discuss currency if there is a contract ambiguity, missing conversion rate, or explicit currency mismatch.
+3. MISSING / UNCLEAR PROVISIONS: When the user asks about missing terms or what is omitted, identify only omissions that create a real and meaningful consequence for the user in this deal (e.g., open-ended revisions with no round cap, no payment protection for completed work on termination, no cancellation fee where cancellation leaves work unpaid). Accurately state what is stated and what is omitted without inventing text.
+4. CLEAN PLAIN TEXT (NO MARKDOWN ASTERISKS OR HASHTAGS): Do NOT use markdown formatting characters such as asterisks (**bold**, *italic*), hashtags (#, ##, ###), or backticks. Write in clean, plain professional text with natural spacing, clean numbers (1., 2., 3.) or hyphens (-).
+5. REFER TO CLAUSE NUMBERS AND SECTIONS: Always explicitly reference the relevant clause number or section name (e.g. "Section 4.1 (Usage Rights)", "Clause 7 (Payment)") when discussing terms or preparing negotiations.
+6. MOVE FROM EXPLANATION TO ACTION: When addressing a concern or negotiation question, guide the user through:
+   - What the contract currently says and means (citing the section/clause)
    - Why it matters / the practical trade-off
    - What reasonable counter-position or alternative they could ask for
-5. NEGOTIATION ACTIONS: If the user is asking how to negotiate, push back, or change a clause, include a structured "negotiationAction" with a professional, balanced, polite email draft and optional replacement clause wording.
-6. SOURCE CITATIONS: Whenever citing a specific term, include the exact section name/title and a short verbatim quote in "sources".
-7. FOLLOW-UP QUESTIONS: Provide 2 to 4 contextual, high-value suggested follow-up questions in "suggestedFollowUps" tailored to the exact conversation context.
+7. NEGOTIATION ACTIONS: If the user is asking how to negotiate, push back, or change a clause, include a structured "negotiationAction" with a professional, balanced, polite email draft and optional replacement clause wording referencing the clause number without markdown formatting.
+8. SOURCE CITATIONS: Whenever citing a specific term, include the exact section name/title and a short verbatim quote in "sources".
+9. FOLLOW-UP QUESTIONS: Provide 2 to 4 contextual, high-value suggested follow-up questions in "suggestedFollowUps" tailored to the exact conversation context.
 
 === RESPONSE FORMAT ===
 You MUST return ONLY a valid JSON object matching this schema:
 {
-  "answer": "Clear, formatted markdown response explaining the answer to the user.",
+  "answer": "Clean plain-text response explaining the answer to the user without asterisks or hashtags.",
   "sources": [
     {
       "sectionOrTitle": "Section name or Clause title",
@@ -171,7 +174,7 @@ You MUST return ONLY a valid JSON object matching this schema:
   ],
   "negotiationAction": {
     "title": "Short title of the proposed change",
-    "draftEmail": "Polite, professional email draft ready to send",
+    "draftEmail": "Polite, professional email draft ready to send referencing the section",
     "replacementClause": "Optional proposed replacement contract wording"
   } // or null if no specific negotiation draft is relevant
 }`;
@@ -191,19 +194,32 @@ You MUST return ONLY a valid JSON object matching this schema:
 
     const parsed = JSON.parse(rawResult) as ChatResponsePayload;
     return {
-      answer: parsed.answer || "I have reviewed your contract regarding this question.",
-      sources: Array.isArray(parsed.sources) ? parsed.sources : [],
+      answer: stripMarkdown(parsed.answer || "I have reviewed your contract regarding this question."),
+      sources: Array.isArray(parsed.sources)
+        ? parsed.sources.map((s) => ({
+            sectionOrTitle: stripMarkdown(s.sectionOrTitle),
+            quoteSnippet: stripMarkdown(s.quoteSnippet),
+          }))
+        : [],
       suggestedFollowUps: Array.isArray(parsed.suggestedFollowUps)
-        ? parsed.suggestedFollowUps
+        ? parsed.suggestedFollowUps.map((q) => stripMarkdown(q))
         : [
             "What are the biggest risks here?",
             "What should I negotiate?",
             "What am I giving the other party?",
           ],
-      negotiationAction: parsed.negotiationAction || null,
+      negotiationAction: parsed.negotiationAction
+        ? {
+            title: stripMarkdown(parsed.negotiationAction.title),
+            draftEmail: stripMarkdown(parsed.negotiationAction.draftEmail),
+            replacementClause: parsed.negotiationAction.replacementClause
+              ? stripMarkdown(parsed.negotiationAction.replacementClause)
+              : undefined,
+          }
+        : null,
     };
   } catch (error) {
-    console.error("Ask DealIQ chat error:", error);
+    console.error("Ask PactIQ chat error:", error);
     // Fallback response if parsing fails
     return {
       answer:
@@ -218,3 +234,5 @@ You MUST return ONLY a valid JSON object matching this schema:
     };
   }
 }
+
+export const askDealIQChat = askPactIQChat;

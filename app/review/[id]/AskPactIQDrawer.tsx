@@ -17,7 +17,7 @@ export interface DrawerMessage {
   focusLabel?: string;
 }
 
-interface AskDealIQDrawerProps {
+export interface AskPactIQDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   contractId: string;
@@ -27,7 +27,9 @@ interface AskDealIQDrawerProps {
   topConcernSummary?: string;
 }
 
-export function AskDealIQDrawer({
+export type AskDealIQDrawerProps = AskPactIQDrawerProps;
+
+export function AskPactIQDrawer({
   isOpen,
   onClose,
   contractId,
@@ -35,15 +37,43 @@ export function AskDealIQDrawer({
   focusContext,
   onClearFocus,
   topConcernSummary,
-}: AskDealIQDrawerProps) {
+}: AskPactIQDrawerProps) {
   const [messages, setMessages] = useState<DrawerMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetchingHistory, setFetchingHistory] = useState(false);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const [error, setError] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch persistent conversation history
+  useEffect(() => {
+    async function loadHistory() {
+      if (!contractId) return;
+      setFetchingHistory(true);
+      try {
+        const res = await fetch(`/api/contracts/${contractId}/chat`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.messages)) {
+            setMessages(data.messages);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+      } finally {
+        setFetchingHistory(false);
+        setHasLoadedHistory(true);
+      }
+    }
+
+    if (isOpen && !hasLoadedHistory) {
+      loadHistory();
+    }
+  }, [isOpen, contractId, hasLoadedHistory]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -81,6 +111,20 @@ export function AskDealIQDrawer({
     }
   }
 
+  // Clear chat handler
+  async function handleClearChat() {
+    if (messages.length === 0) return;
+    const confirmClear = window.confirm("Are you sure you want to clear this contract's chat history?");
+    if (!confirmClear) return;
+
+    try {
+      await fetch(`/api/contracts/${contractId}/chat`, { method: "DELETE" });
+      setMessages([]);
+    } catch (e) {
+      console.error("Failed to clear chat history:", e);
+    }
+  }
+
   // Send message
   async function handleSend(textToSend?: string) {
     const text = (textToSend || input).trim();
@@ -104,19 +148,19 @@ export function AskDealIQDrawer({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          message: text,
           focusContext,
         }),
       });
 
       if (!response.ok) {
         const errData = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error || "Failed to get response from DealIQ.");
+        throw new Error(errData.error || "Failed to get response from PactIQ.");
       }
 
-      const payload = (await response.json()) as ChatResponsePayload;
+      const payload = (await response.json()) as ChatResponsePayload & { messageId?: string };
       const assistantMsg: DrawerMessage = {
-        id: `a-${Date.now()}`,
+        id: payload.messageId || `a-${Date.now()}`,
         role: "assistant",
         content: payload.answer,
         sources: payload.sources,
@@ -168,11 +212,11 @@ export function AskDealIQDrawer({
         <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm shadow-xs">
-              D
+              P
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h2 className="text-sm font-bold text-slate-950">Ask DealIQ</h2>
+                <h2 className="text-sm font-bold text-slate-950">Ask PactIQ</h2>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
               </div>
               <p className="text-[11px] text-slate-500 font-medium truncate max-w-[260px] sm:max-w-[320px]">
@@ -185,17 +229,17 @@ export function AskDealIQDrawer({
             {messages.length > 0 && (
               <button
                 type="button"
-                onClick={() => setMessages([])}
-                className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100 transition"
+                onClick={handleClearChat}
+                className="text-[11px] font-semibold text-slate-500 hover:text-red-700 px-2 py-1 rounded hover:bg-slate-100 transition"
               >
-                Clear
+                Clear History
               </button>
             )}
             <button
               type="button"
               onClick={onClose}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
-              aria-label="Close Ask DealIQ"
+              aria-label="Close Ask PactIQ"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -229,8 +273,21 @@ export function AskDealIQDrawer({
 
         {/* Messages Scroll Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Loading History Indicator */}
+          {fetchingHistory && (
+            <div className="py-6 text-center text-xs text-slate-500 space-y-2">
+              <div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-blue-600 animate-spin">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              </div>
+              <p>Restoring conversation history...</p>
+            </div>
+          )}
+
           {/* Initial State / Welcome */}
-          {messages.length === 0 && (
+          {!fetchingHistory && messages.length === 0 && (
             <div className="space-y-4 pt-2">
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
                 <div className="flex items-center gap-2">
@@ -257,7 +314,7 @@ export function AskDealIQDrawer({
                     ? "Suggested questions about this finding"
                     : focusContext?.type === "clause"
                     ? "Suggested questions about this clause"
-                    : "Try asking DealIQ"}
+                    : "Try asking PactIQ"}
                 </p>
                 <div className="flex flex-col gap-2">
                   {starterQuestions.map((q, idx) => (
@@ -301,10 +358,10 @@ export function AskDealIQDrawer({
                     {/* Header */}
                     <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2">
                       <div className="flex h-5 w-5 items-center justify-center rounded bg-slate-900 text-[10px] font-bold text-white">
-                        D
+                        P
                       </div>
                       <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
-                        DealIQ Assistant
+                        PactIQ Assistant
                       </span>
                     </div>
 
@@ -434,7 +491,7 @@ export function AskDealIQDrawer({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              <span>DealIQ is reviewing contract clauses & findings...</span>
+              <span>PactIQ is reviewing contract clauses & findings...</span>
             </div>
           )}
 
@@ -483,10 +540,13 @@ export function AskDealIQDrawer({
             </button>
           </form>
           <p className="text-[10px] text-center text-slate-400 mt-2">
-            Ask DealIQ provides analysis grounded in your contract. It does not provide formal legal advice.
+            Ask PactIQ provides analysis grounded in your contract. It does not provide formal legal advice.
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+export const AskDealIQDrawer = AskPactIQDrawer;
+

@@ -116,18 +116,18 @@ export default function HomePage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-base shadow-sm group-hover:bg-blue-900 transition-colors">
-              D
+              P
             </div>
             <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-slate-950">DealIQ</span>
+              <span className="text-lg font-bold tracking-tight text-slate-950">PactIQ</span>
               <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-500 -mt-1">Contract Intelligence</span>
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-slate-950 transition-colors">How It Works</a>
-            <a href="#ask-dealiq" className="hover:text-slate-950 transition-colors flex items-center gap-1.5">
-              <span>Ask DealIQ AI</span>
+            <a href="#ask-pactiq" className="hover:text-slate-950 transition-colors flex items-center gap-1.5">
+              <span>Ask PactIQ AI</span>
               <span className="rounded bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-700">NEW</span>
             </a>
             <a href="#features" className="hover:text-slate-950 transition-colors">What We Spot</a>
@@ -135,10 +135,18 @@ export default function HomePage() {
             <a href="#security" className="hover:text-slate-950 transition-colors">Privacy & Security</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/deals"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition"
+            >
+              <span>📁</span>
+              <span>Your Deals</span>
+            </Link>
+
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.98] transition-all"
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.98] transition-all"
             >
               <span>Review a Contract</span>
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,7 +177,7 @@ export default function HomePage() {
 
             {/* Subtitle */}
             <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-600 font-normal">
-              Upload your agreement to uncover hidden risks in plain English, understand your trade-offs, and chat with <strong>Ask DealIQ</strong> to get ready-to-send negotiation emails in seconds.
+              Upload your agreement to uncover hidden risks in plain English, understand your trade-offs, and chat with <strong>Ask PactIQ</strong> to get ready-to-send negotiation emails in seconds.
             </p>
 
             {/* Action Buttons */}
@@ -217,7 +225,7 @@ export default function HomePage() {
                     <span className="flex h-3 w-3 rounded-full bg-red-500" />
                     <span className="flex h-3 w-3 rounded-full bg-amber-500" />
                     <span className="flex h-3 w-3 rounded-full bg-emerald-500" />
-                    <span className="ml-2 text-xs font-bold text-slate-800">DealIQ Review: Brand Sponsorship Agreement</span>
+                    <span className="ml-2 text-xs font-bold text-slate-800">PactIQ Review: Brand Sponsorship Agreement</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-md bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
@@ -274,12 +282,12 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Ask DealIQ Drawer Mockup Preview */}
+                  {/* Ask PactIQ Drawer Mockup Preview */}
                   <div className="lg:col-span-5 rounded-xl border border-blue-200 bg-white p-4 shadow-sm space-y-2.5">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-900 text-[9px] font-bold text-white">D</span>
-                        <span className="text-xs font-bold text-slate-900">Ask DealIQ</span>
+                        <span className="flex h-4 w-4 items-center justify-center rounded bg-slate-900 text-[9px] font-bold text-white">P</span>
+                        <span className="text-xs font-bold text-slate-900">Ask PactIQ</span>
                       </div>
                       <span className="text-[10px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded">
                         Section 4.2 Context
@@ -313,13 +321,13 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl">
             <div className="text-center max-w-2xl mx-auto">
               <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                How DealIQ Works
+                How PactIQ Works
               </span>
               <h2 className="mt-4 text-3xl font-extrabold text-slate-950 sm:text-4xl tracking-tight">
                 No confusing legal talk. Just 3 clear steps for every issue.
               </h2>
               <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-                DealIQ breaks down every flagged contract term into 3 structured layers so you immediately understand the real-world impact and know exactly how to respond.
+                PactIQ breaks down every flagged contract term into 3 structured layers so you immediately understand the real-world impact and know exactly how to respond.
               </p>
             </div>
 
@@ -350,18 +358,18 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Section: Ask DealIQ AI Spotlight */}
-        <section id="ask-dealiq" className="border-t border-slate-200 bg-gradient-to-b from-slate-50 to-blue-50/30 px-6 py-20 sm:py-28">
+        {/* Section: Ask PactIQ AI Spotlight */}
+        <section id="ask-pactiq" className="border-t border-slate-200 bg-gradient-to-b from-slate-50 to-blue-50/30 px-6 py-20 sm:py-28">
           <div className="mx-auto max-w-7xl">
             <div className="text-center max-w-3xl mx-auto">
               <span className="rounded-full border border-blue-300 bg-blue-100/70 px-3.5 py-1 text-xs font-bold text-blue-800">
-                ✨ Meet Ask DealIQ
+                ✨ Meet Ask PactIQ
               </span>
               <h2 className="mt-4 text-3xl font-extrabold text-slate-950 sm:text-5xl tracking-tight leading-tight">
                 An AI assistant that has already read your entire contract.
               </h2>
               <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
-                <strong>Ask DealIQ</strong> is built directly on top of your contract review. It understands your specific agreement, your role, and your priorities—giving you clear answers and drafting ready-to-send negotiation emails on the spot.
+                <strong>Ask PactIQ</strong> is built directly on top of your contract review. It understands your specific agreement, your role, and your priorities—giving you clear answers and drafting ready-to-send negotiation emails on the spot.
               </p>
             </div>
 
@@ -402,7 +410,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-base font-bold text-slate-950">Zero Made-Up Terms</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Every answer points to real section numbers and exact quotes. If something isn&apos;t in the contract, DealIQ clearly tells you.
+                  Every answer points to real section numbers and exact quotes. If something isn&apos;t in the contract, PactIQ clearly tells you.
                 </p>
               </div>
             </div>
@@ -412,13 +420,12 @@ export default function HomePage() {
                 href="/upload"
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-slate-800 transition"
               >
-                <span>Try Ask DealIQ on Your Contract</span>
+                <span>Try Ask PactIQ on Your Contract</span>
                 <span>→</span>
               </Link>
             </div>
           </div>
         </section>
-
         {/* Section: Features */}
         <section id="features" className="border-t border-slate-200 bg-slate-50 px-6 py-20 sm:py-28">
           <div className="mx-auto max-w-7xl">
@@ -431,7 +438,7 @@ export default function HomePage() {
                   Protecting you against one-sided agreements and sneaky traps.
                 </h2>
                 <p className="mt-4 text-sm sm:text-base leading-relaxed text-slate-600">
-                  Big companies hire teams of lawyers to write contracts that heavily protect their interests. DealIQ levels the playing field with clear, practical intelligence built for you.
+                  Big companies hire teams of lawyers to write contracts that heavily protect their interests. PactIQ levels the playing field with clear, practical intelligence built for you.
                 </p>
 
                 <div className="mt-8 space-y-4">
@@ -475,7 +482,7 @@ export default function HomePage() {
 
               <div className="card-surface rounded-2xl p-6 sm:p-8 space-y-6">
                 <div className="border-b border-slate-200 pb-4">
-                  <h3 className="text-base font-bold text-slate-900">Common Traps DealIQ Spots</h3>
+                  <h3 className="text-base font-bold text-slate-900">Common Traps PactIQ Spots</h3>
                   <p className="text-xs text-slate-500 mt-0.5">Automated checks against standard protective guidelines.</p>
                 </div>
 
@@ -578,7 +585,7 @@ export default function HomePage() {
               Your confidential documents always stay private.
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-              DealIQ is built with strict privacy standards. Your contracts are processed securely, stored with encryption, and never used to train public AI models.
+              PactIQ is built with strict privacy standards. Your contracts are processed securely, stored with encryption, and never used to train public AI models.
             </p>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-3 text-left">
@@ -606,7 +613,7 @@ export default function HomePage() {
               Don&apos;t sign until you know what it means.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Upload your PDF or Word file right now, get an easy-to-read breakdown, and ask any question to Ask DealIQ in seconds.
+              Upload your PDF or Word file right now, get an easy-to-read breakdown, and ask any question to Ask PactIQ in seconds.
             </p>
             <div className="mt-8 flex justify-center">
               <Link
@@ -627,9 +634,9 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-6">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-600 text-white font-bold text-xs">
-                D
+                P
               </div>
-              <span className="text-sm font-bold text-white tracking-wide">DealIQ</span>
+              <span className="text-sm font-bold text-white tracking-wide">PactIQ</span>
             </div>
             <p className="text-xs text-slate-400">
               Empowering creators, freelancers, and businesses with transparent contract intelligence.
@@ -638,7 +645,7 @@ export default function HomePage() {
 
           <div className="text-slate-400 space-y-2 text-[11px] leading-relaxed">
             <p>
-              <strong>Legal Notice:</strong> DealIQ uses artificial intelligence to help independent creators, professionals, and businesses understand contract terms, identify potential concerns, and prepare negotiation alternatives. DealIQ is an informational tool and does not provide legal advice or create an attorney-client relationship. For complex or high-stakes matters, consult a qualified attorney.
+              <strong>Legal Notice:</strong> PactIQ uses artificial intelligence to help independent creators, professionals, and businesses understand contract terms, identify potential concerns, and prepare negotiation alternatives. PactIQ is an informational tool and does not provide legal advice or create an attorney-client relationship. For complex or high-stakes matters, consult a qualified attorney.
             </p>
             <p className="text-slate-500">
               © {new Date().getFullYear()} CaseSimpli Legal Technologies Ltd. All rights reserved.
@@ -649,3 +656,4 @@ export default function HomePage() {
     </div>
   );
 }
+

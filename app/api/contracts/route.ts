@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { extractText } from "@/lib/ai/extract";
 import { segmentText } from "@/lib/ai/segment";
+import { getLatestChatPerContract } from "@/lib/db/chatDb";
 import { prisma } from "@/lib/db/prisma";
 import { storage } from "@/lib/storage/client";
 
@@ -26,6 +27,73 @@ function parsePriorities(value: FormDataEntryValue | null): string[] {
       : [];
   } catch {
     return [];
+  }
+}
+
+export async function GET() {
+  try {
+    const contracts = await prisma.contract.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        versions: {
+          orderBy: { versionNumber: "desc" },
+          take: 1,
+          include: {
+            reviews: {
+              where: { status: "complete" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              include: {
+                findings: {
+                  where: { sourceValidated: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const contractIds = contracts.map((c) => c.id);
+    const chatActivityMap = await getLatestChatPerContract(contractIds);
+
+    const formatted = contracts.map((c) => {
+      const version = c.versions[0];
+      const review = version?.reviews[0];
+      const findings = review?.findings || [];
+      const highCount = findings.filter((f) => f.severity === "high").length;
+      const worthCount = findings.filter((f) => f.severity === "worth_reviewing").length;
+      const understandCount = findings.filter((f) => f.severity === "understand").length;
+      const chatActivity = chatActivityMap.get(c.id);
+
+      return {
+        id: c.id,
+        filename: c.filename,
+        contractType: c.contractType || "General Agreement",
+        status: c.status,
+        createdAt: c.createdAt.toISOString(),
+        hasReview: !!review,
+        reviewId: review?.id,
+        userRole: review?.userRole,
+        counts: {
+          high: highCount,
+          worth_reviewing: worthCount,
+          understand: understandCount,
+          total: findings.length,
+        },
+        chatActivity: chatActivity
+          ? {
+              lastMessageAt: new Date(chatActivity.lastMessageAt).toISOString(),
+              messageSnippet: chatActivity.messageSnippet,
+            }
+          : null,
+      };
+    });
+
+    return NextResponse.json({ contracts: formatted });
+  } catch (error: unknown) {
+    console.error("Failed to list contracts:", error);
+    return NextResponse.json({ error: "Failed to list contracts." }, { status: 500 });
   }
 }
 
@@ -67,7 +135,7 @@ export async function POST(request: Request) {
     const clauses = segmentText(extracted.pages);
     if (clauses.length === 0) {
       return NextResponse.json(
-        { error: "DealIQ could not identify readable clauses in this document." },
+        { error: "PactIQ could not identify readable clauses in this document." },
         { status: 422 }
       );
     }
@@ -132,7 +200,7 @@ export async function POST(request: Request) {
     const message = messageFrom(error);
     console.error("Upload failed:", error);
     return NextResponse.json(
-      { error: message || "DealIQ could not process this contract. Please try again." },
+      { error: message || "PactIQ could not process this contract. Please try again." },
       { status: 500 }
     );
   }

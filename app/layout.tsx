@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DealIQ — Know What You're Signing",
+  title: "PactIQ — Know What You're Signing",
   description: "Modern contract intelligence for creators, freelancers, and businesses. Understand important terms, identify hidden risks, and generate ready-to-use negotiation options.",
 };
 

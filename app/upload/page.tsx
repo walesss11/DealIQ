@@ -209,12 +209,22 @@ export default function UploadPage() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Back to DealIQ</span>
+            <span>Back to PactIQ</span>
           </Link>
 
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Secure Intake Portal</span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/deals"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition"
+            >
+              <span>📁</span>
+              <span>Your Deals</span>
+            </Link>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+              <span>Secure Intake Portal</span>
+            </div>
           </div>
         </div>
       </header>
@@ -230,7 +240,7 @@ export default function UploadPage() {
               Upload your agreement for review
             </h1>
             <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Provide your contract along with your role. DealIQ will analyze key provisions, detect one-sided terms, and generate tactical negotiation recommendations.
+              Provide your contract along with your role. PactIQ will analyze key provisions, detect one-sided terms, and generate tactical negotiation recommendations.
             </p>
           </div>
 
@@ -442,7 +452,7 @@ export default function UploadPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>{status === "uploading" ? "Uploading & Extracting Document..." : "DealIQ Intelligence Pipeline Running..."}</span>
+                    <span>{status === "uploading" ? "Uploading & Extracting Document..." : "PactIQ Intelligence Pipeline Running..."}</span>
                   </span>
                   <span className="text-[11px] font-mono text-blue-700">Step {stageIndex + 1} of 4</span>
                 </div>
@@ -470,12 +480,12 @@ export default function UploadPage() {
                 ? "Extracting document..."
                 : status === "analyzing"
                 ? "Analyzing & validating terms..."
-                : "Analyze Contract with DealIQ →"}
+                : "Analyze Contract with PactIQ →"}
             </button>
 
             {/* Footer Disclaimer */}
             <p className="text-center text-[11px] text-slate-500 leading-relaxed">
-              DealIQ is an informational intelligence tool and does not provide legal advice. Your documents are processed privately and securely.
+              PactIQ is an informational intelligence tool and does not provide legal advice. Your documents are processed privately and securely.
             </p>
           </form>
         </div>

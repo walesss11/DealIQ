@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { deleteContractCompletely, ensureCascadeConstraints } from "@/lib/db/chatDb";
 import { prisma } from "@/lib/db/prisma";
 import { storage } from "@/lib/storage/client";
 
@@ -79,6 +80,49 @@ export async function GET(
     });
   } catch (error: unknown) {
     console.error("Failed to fetch contract:", error);
-    return NextResponse.json({ error: "DealIQ could not load this contract." }, { status: 500 });
+    return NextResponse.json({ error: "PactIQ could not load this contract." }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    // 1. Fetch versions to clean up storage files
+    const contract = await prisma.contract.findUnique({
+      where: { id },
+      include: {
+        versions: true,
+      },
+    });
+
+    if (!contract) {
+      return NextResponse.json({ error: "Contract not found." }, { status: 404 });
+    }
+
+    // 2. Delete associated uploaded storage files
+    for (const v of contract.versions) {
+      if (v.fileReference) {
+        await storage.deleteFile(v.fileReference).catch((err) => {
+          console.warn(`Could not delete storage file ${v.fileReference}:`, err);
+        });
+      }
+    }
+
+    // 3. Delete contract and all related records cleanly in dependency order via transaction
+    await deleteContractCompletely(id);
+
+    // 4. Ensure DB cascade constraints are active in the background
+    ensureCascadeConstraints().catch(() => {});
+
+    return NextResponse.json({ success: true, message: "Deal deleted successfully." });
+  } catch (error: unknown) {
+    console.error("Failed to delete contract:", error);
+    const message = error instanceof Error ? error.message : "Failed to delete deal.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+

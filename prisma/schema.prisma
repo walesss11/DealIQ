@@ -17,6 +17,7 @@ model User {
   createdAt  DateTime   @default(now()) @map("created_at")
   contracts  Contract[]
   payments   Payment[]
+  conversations Conversation[]
 
   @@map("users")
 }
@@ -30,6 +31,7 @@ model Contract {
   createdAt    DateTime          @default(now()) @map("created_at")
   user         User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions     ContractVersion[]
+  conversations Conversation[]
 
   @@map("contracts")
   @@index([userId])
@@ -81,6 +83,7 @@ model Review {
   contractVersion   ContractVersion @relation(fields: [contractVersionId], references: [id], onDelete: Cascade)
   findings          Finding[]
   payments          Payment[]
+  conversations     Conversation[]
 
   // Immutability: Reviews are never updated after creation (except status/completedAt)
   // A re-run creates a NEW Review linked to the same ContractVersion.
@@ -135,4 +138,39 @@ model Payment {
   @@map("payments")
   @@index([userId])
   @@index([reviewId])
+}
+
+model Conversation {
+  id          String        @id @default(cuid())
+  contractId  String        @map("contract_id")
+  reviewId    String?       @map("review_id")
+  userId      String?       @map("user_id")
+  title       String?
+  summary     String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  contract    Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  review      Review?       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    ChatMessage[]
+
+  @@map("conversations")
+  @@index([contractId])
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id                String       @id @default(cuid())
+  conversationId    String       @map("conversation_id")
+  role              String       // user | assistant
+  content           String       @db.Text
+  focusContext      String?      @map("focus_context") @db.Text // JSON: { type, findingId, clauseId, label }
+  sources           String?      @db.Text // JSON: Array<{ sectionOrTitle, quoteSnippet }>
+  negotiationAction String?      @map("negotiation_action") @db.Text // JSON: { title, draftEmail, replacementClause }
+  createdAt         DateTime     @default(now()) @map("created_at")
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+  @@index([conversationId, createdAt])
 }
