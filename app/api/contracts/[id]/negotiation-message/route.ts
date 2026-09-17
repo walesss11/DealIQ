@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
 import { generateFullNegotiation } from "@/lib/ai/generate-full-negotiation";
+import { evaluateMissingProvisionsRules } from "@/lib/ai/missing-provisions";
+import { getCurrentUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
 import type { Finding } from "@prisma/client";
 
 export async function POST(
@@ -8,6 +10,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
 
     const contract = await prisma.contract.findUnique({
@@ -34,7 +41,7 @@ export async function POST(
       },
     });
 
-    if (!contract || !contract.versions[0]) {
+    if (!contract || (contract.userId && contract.userId !== user.id) || !contract.versions[0]) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
 
@@ -93,12 +100,25 @@ export async function POST(
       },
     ];
 
+    const confirmedType = classificationResult.confirmedContractType || contract.contractType || "General Agreement";
+    const missingProvisions = evaluateMissingProvisionsRules(
+      version.extractedText || "",
+      confirmedType,
+      review.userRole || "Contractor"
+    );
+
     const result = await generateFullNegotiation({
       filename: contract.filename,
-      contractType: classificationResult.confirmedContractType || contract.contractType || "General Agreement",
+      contractType: confirmedType,
       userRole: review.userRole,
       userPriorities,
       dealTerms,
+      missingProvisions: missingProvisions.map((m) => ({
+        title: m.title,
+        whyItMatters: m.whyItMatters,
+        suggestedClause: m.suggestedClause,
+        negotiationSnippet: m.negotiationSnippet,
+      })),
       findings: review.findings.map((f) => ({
         id: f.id,
         category: f.category,

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { extractText } from "@/lib/ai/extract";
 import { segmentText } from "@/lib/ai/segment";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getLatestChatPerContract } from "@/lib/db/chatDb";
 import { prisma } from "@/lib/db/prisma";
 import { storage } from "@/lib/storage/client";
@@ -32,12 +33,17 @@ function parsePriorities(value: FormDataEntryValue | null): string[] {
 
 export async function GET() {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const contracts = await prisma.contract.findMany({
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
       include: {
         versions: {
           orderBy: { versionNumber: "desc" },
-          take: 1,
           include: {
             reviews: {
               where: { status: "complete" },
@@ -58,8 +64,8 @@ export async function GET() {
     const chatActivityMap = await getLatestChatPerContract(contractIds);
 
     const formatted = contracts.map((c) => {
-      const version = c.versions[0];
-      const review = version?.reviews[0];
+      const latestVersion = c.versions[0];
+      const review = latestVersion?.reviews[0];
       const findings = review?.findings || [];
       const highCount = findings.filter((f) => f.severity === "high").length;
       const worthCount = findings.filter((f) => f.severity === "worth_reviewing").length;
@@ -68,13 +74,15 @@ export async function GET() {
 
       return {
         id: c.id,
-        filename: c.filename,
+        filename: latestVersion?.filename || c.filename,
         contractType: c.contractType || "General Agreement",
         status: c.status,
         createdAt: c.createdAt.toISOString(),
         hasReview: !!review,
         reviewId: review?.id,
         userRole: review?.userRole,
+        versionCount: c.versions.length,
+        latestVersionNumber: latestVersion?.versionNumber || 1,
         counts: {
           high: highCount,
           worth_reviewing: worthCount,
@@ -101,6 +109,11 @@ export async function POST(request: Request) {
   let uploadedPath: string | null = null;
 
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const fileEntry = formData.get("file");
     const userRole = formData.get("userRole");
@@ -152,6 +165,7 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const contract = await tx.contract.create({
         data: {
+          userId: user.id,
           filename: fileEntry.name,
           contractType: userContractType,
           status: "pending",
@@ -165,6 +179,16 @@ export async function POST(request: Request) {
           extractedText: extracted.text,
         },
       });
+
+      try {
+        await tx.$executeRawUnsafe(
+          `UPDATE contract_versions SET filename = $1 WHERE id = $2`,
+          fileEntry.name,
+          version.id
+        );
+      } catch {
+        // Safe fallback
+      }
 
       await tx.clause.createMany({
         data: clauses.map((clause) => ({

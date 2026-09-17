@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
 import { redraftContract, RedraftFindingInput } from "@/lib/ai/redraft-contract";
+import { getCurrentUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = (await request.json()) as {
       selectedFindingIds?: string[];
@@ -46,7 +52,7 @@ export async function POST(
       },
     });
 
-    if (!contract || !contract.versions[0]) {
+    if (!contract || (contract.userId && contract.userId !== user.id) || !contract.versions[0]) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
 

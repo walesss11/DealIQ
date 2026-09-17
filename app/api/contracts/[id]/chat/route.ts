@@ -2,6 +2,7 @@ import type { Finding } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 import { askPactIQChat, ChatFocusContext, ChatSourceCitation, ChatNegotiationAction } from "@/lib/ai/chat";
+import { getCurrentUser } from "@/lib/auth/session";
 import {
   getOrCreateConversation,
   getConversationWithMessages,
@@ -16,6 +17,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id: contractId } = await params;
 
     const contract = await prisma.contract.findUnique({
@@ -35,7 +41,7 @@ export async function GET(
       },
     });
 
-    if (!contract) {
+    if (!contract || (contract.userId && contract.userId !== user.id)) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
 
@@ -100,6 +106,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id: contractId } = await params;
     const body = (await request.json()) as {
       messages?: Array<{ role: "user" | "assistant"; content: string }>;
@@ -150,7 +161,7 @@ export async function POST(
       },
     });
 
-    if (!contract || !contract.versions[0]) {
+    if (!contract || (contract.userId && contract.userId !== user.id) || !contract.versions[0]) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
 
@@ -230,14 +241,22 @@ export async function POST(
       },
     ];
 
+    // Count total versions for deal context
+    const totalVersionsCount = await prisma.contractVersion.count({
+      where: { contractId },
+    });
+
     // 3. Ask PactIQ Chat with persistent contract intelligence
     const result = await askPactIQChat(
       aiMessageHistory,
       {
-        filename: contract.filename,
+        filename: version.filename || contract.filename,
         contractType: classificationResult.confirmedContractType || contract.contractType || "General Agreement",
         userRole: review?.userRole || "Independent Professional",
         userPriorities,
+        versionNumber: version.versionNumber,
+        totalVersions: totalVersionsCount,
+        comparisonSummary: review?.comparisonResult || undefined,
         dealSnapshot,
         findings: review?.findings || [],
         clauses: version.clauses || [],
@@ -273,7 +292,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id: contractId } = await params;
+
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+    });
+
+    if (!contract || (contract.userId && contract.userId !== user.id)) {
+      return NextResponse.json({ error: "Contract not found." }, { status: 404 });
+    }
+
     await clearChatMessages(contractId);
     return NextResponse.json({ success: true, message: "Chat history cleared." });
   } catch (error: unknown) {

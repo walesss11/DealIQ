@@ -5,6 +5,9 @@ import { classifyContract } from "@/lib/ai/classify";
 import { analyzeCrossClauses } from "@/lib/ai/cross-clause";
 import { generateNegotiation } from "@/lib/ai/generate-negotiation";
 import { validateSource } from "@/lib/ai/validate-source";
+import { compareContractVersions } from "@/lib/ai/compare-versions";
+import { detectMissingProvisions, type MissingProvision } from "@/lib/ai/missing-provisions";
+import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
 export const runtime = "nodejs";
@@ -30,6 +33,11 @@ export async function POST(
   let activeReviewId: string | null = null;
 
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const contract = await prisma.contract.findUnique({
       where: { id: contractId },
       include: {
@@ -44,7 +52,7 @@ export async function POST(
       },
     });
 
-    if (!contract) {
+    if (!contract || (contract.userId && contract.userId !== user.id)) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
     const version = contract.versions[0];
@@ -92,19 +100,23 @@ export async function POST(
       id: clause.id,
       index: clause.position,
       text: clause.text,
+      section: clause.section,
+      title: clause.title,
     }));
 
     // 1. Clause-level analysis
     const rawFindings = await analyzeClauses(
       clausesForAnalysis,
       classification.confirmedContractType,
-      priorities
+      priorities,
+      review.userRole
     );
 
     // 2. Cross-clause analysis (Spec Section 5.1)
     const crossFindings = await analyzeCrossClauses(
       clausesForAnalysis,
-      classification.confirmedContractType
+      classification.confirmedContractType,
+      review.userRole
     );
 
     const counts = { high: 0, worthReviewing: 0, understand: 0, noIssue: 0 };
@@ -130,7 +142,7 @@ export async function POST(
 
       if (validation.isValid && (finding.severity === "high" || finding.severity === "worth_reviewing")) {
         try {
-          const clauseSection = clause.section || clause.title || `Clause #${clause.position + 1}`;
+          const clauseSection = clause.section || clause.title || undefined;
           const neg = await generateNegotiation(
             finding.title,
             clause.text,
@@ -199,7 +211,7 @@ export async function POST(
 
       if (validation.isValid && (crossFinding.severity === "high" || crossFinding.severity === "worth_reviewing")) {
         try {
-          const crossClauseSection = primaryClause.section || primaryClause.title || `Clause #${primaryClause.position + 1}`;
+          const crossClauseSection = primaryClause.section || primaryClause.title || undefined;
           const neg = await generateNegotiation(
             crossFinding.title,
             primaryClause.text,
@@ -244,12 +256,103 @@ export async function POST(
       if (crossFinding.severity === "understand") counts.understand += 1;
     }
 
+    // 3. Multi-version comparison (if versionNumber > 1)
+    let comparisonResultStr: string | null = null;
+    if (version.versionNumber > 1) {
+      const previousVersion = await prisma.contractVersion.findFirst({
+        where: {
+          contractId,
+          versionNumber: { lt: version.versionNumber },
+        },
+        orderBy: { versionNumber: "desc" },
+        include: {
+          clauses: { orderBy: { position: "asc" } },
+          reviews: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            include: {
+              findings: {
+                include: { clause: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (previousVersion && previousVersion.reviews[0]) {
+        try {
+          const prevReview = previousVersion.reviews[0];
+          const comparison = await compareContractVersions({
+            previousVersionNumber: previousVersion.versionNumber,
+            currentVersionNumber: version.versionNumber,
+            contractType: classification.confirmedContractType,
+            userRole: review.userRole,
+            userPriorities: priorities,
+            previousClauses: previousVersion.clauses.map((c) => ({
+              id: c.id,
+              section: c.section,
+              title: c.title,
+              text: c.text,
+              position: c.position,
+            })),
+            previousFindings: prevReview.findings.map((f) => ({
+              id: f.id,
+              category: f.category,
+              severity: f.severity,
+              title: f.title,
+              whatItSays: f.whatItSays,
+              whatItMeans: f.whatItMeans,
+              whatToConsider: f.whatToConsider,
+              suggestedRewrite: f.suggestedRewrite,
+              emailSnippet: f.emailSnippet,
+              clause: f.clause
+                ? {
+                    section: f.clause.section,
+                    title: f.clause.title,
+                    position: f.clause.position,
+                  }
+                : null,
+            })),
+            revisedClauses: version.clauses.map((c) => ({
+              id: c.id,
+              section: c.section,
+              title: c.title,
+              text: c.text,
+              position: c.position,
+            })),
+            revisedExtractedText: version.extractedText,
+          });
+          comparisonResultStr = JSON.stringify(comparison);
+        } catch (compErr) {
+          console.warn("Could not execute version comparison:", compErr);
+        }
+      }
+    }
+
+    // 4. Missing protective provisions detection
+    let missingProvisionsList: MissingProvision[] = [];
+    try {
+      missingProvisionsList = await detectMissingProvisions({
+        extractedText: version.extractedText,
+        contractType: classification.confirmedContractType,
+        userRole: review.userRole,
+        existingClauseTitles: version.clauses.map((c) => c.title || c.section || "").filter(Boolean),
+      });
+    } catch (mErr) {
+      console.warn("Could not detect missing provisions:", mErr);
+    }
+
+    const finalClassification = {
+      ...classification,
+      missingProvisions: missingProvisionsList,
+    };
+
     await prisma.$transaction([
       prisma.review.update({
         where: { id: review.id },
         data: {
           status: "complete",
-          classificationResult: JSON.stringify(classification),
+          classificationResult: JSON.stringify(finalClassification),
           overallAttention: JSON.stringify(counts),
           modelVersion: process.env.OPENAI_MODEL || "gpt-4o",
           completedAt: new Date(),
@@ -257,6 +360,18 @@ export async function POST(
       }),
       prisma.contract.update({ where: { id: contractId }, data: { status: "complete" } }),
     ]);
+
+    if (comparisonResultStr) {
+      try {
+        await prisma.$executeRawUnsafe(
+          `UPDATE reviews SET comparison_result = $1 WHERE id = $2`,
+          comparisonResultStr,
+          review.id
+        );
+      } catch (rawErr) {
+        console.warn("Could not save comparison_result via raw SQL:", rawErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,

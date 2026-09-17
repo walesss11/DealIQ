@@ -10,16 +10,74 @@ datasource db {
   }
 
 model User {
-  id         String     @id @default(cuid())
-  email      String     @unique
-  name       String?
-  userType   String?    @map("user_type")
-  createdAt  DateTime   @default(now()) @map("created_at")
-  contracts  Contract[]
-  payments   Payment[]
-  conversations Conversation[]
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String?
+  image               String?
+  passwordHash        String?              @map("password_hash")
+  emailVerified       DateTime?            @map("email_verified")
+  onboardingCompleted Boolean              @default(false) @map("onboarding_completed")
+  userRole            String?              @map("user_role")
+  role                String               @default("USER") // USER | ADMIN | SUPER_ADMIN
+  freeReviewUsed      Boolean              @default(false) @map("free_review_used")
+  contractTypes       String?              @map("contract_types") @db.Text // JSON string array
+  priorities          String?              @map("priorities") @db.Text // JSON string array
+  contractExperience  String?              @map("contract_experience")
+  onboardingStep      Int                  @default(1) @map("onboarding_step")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at")
+  contracts           Contract[]
+  payments            Payment[]
+  conversations       Conversation[]
+  accounts            Account[]
+  sessions            Session[]
 
   @@map("users")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  type              String   @default("oauth")
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  refreshToken      String?  @map("refresh_token") @db.Text
+  accessToken       String?  @map("access_token") @db.Text
+  expiresAt         Int?     @map("expires_at")
+  tokenType         String?  @map("token_type")
+  scope             String?
+  idToken           String?  @map("id_token") @db.Text
+  sessionState      String?  @map("session_state")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("password_reset_tokens")
 }
 
 model Contract {
@@ -41,6 +99,7 @@ model ContractVersion {
   id            String    @id @default(cuid())
   contractId    String    @map("contract_id")
   versionNumber Int       @map("version_number") @default(1)
+  filename      String?
   fileReference String    @map("file_reference") // Supabase Storage path
   extractedText String?   @map("extracted_text") @db.Text
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -75,9 +134,12 @@ model Review {
   overallAttention  String?         @map("overall_attention") // JSON summary counts
   modelVersion      String?         @map("model_version")
   classificationResult String?      @map("classification_result") @db.Text // JSON
+  comparisonResult  String?         @map("comparison_result") @db.Text // JSON comparison against previous version
   userRole          String?         @map("user_role")
   userContractType  String?         @map("user_contract_type")
   userPriorities    String?         @map("user_priorities") // JSON array
+  isPaid            Boolean         @default(false) @map("is_paid")
+  isFreeTrial       Boolean         @default(false) @map("is_free_trial")
   createdAt         DateTime        @default(now()) @map("created_at")
   completedAt       DateTime?       @map("completed_at")
   contractVersion   ContractVersion @relation(fields: [contractVersionId], references: [id], onDelete: Cascade)
@@ -123,21 +185,24 @@ model Finding {
 }
 
 model Payment {
-  id                  String   @id @default(cuid())
-  userId              String   @map("user_id")
-  reviewId            String   @map("review_id")
+  id                  String    @id @default(cuid())
+  userId              String    @map("user_id")
+  reviewId            String    @map("review_id")
   amount              Float
-  currency            String   @default("USD")
-  provider            String   // stripe | paystack
-  status              String   // pending | paid | failed | refunded
-  transactionReference String? @map("transaction_reference")
-  createdAt           DateTime @default(now()) @map("created_at")
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  review              Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  currency            String    @default("NGN")
+  provider            String    @default("paystack") // paystack | stripe
+  status              String    @default("pending") // pending | paid | failed | abandoned
+  transactionReference String?  @unique @map("transaction_reference")
+  paidAt              DateTime? @map("paid_at")
+  metadata            String?   @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review              Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
   @@map("payments")
   @@index([userId])
   @@index([reviewId])
+  @@index([transactionReference])
 }
 
 model Conversation {
@@ -174,3 +239,19 @@ model ChatMessage {
   @@map("chat_messages")
   @@index([conversationId, createdAt])
 }
+
+model AdminAuditLog {
+  id               String   @id @default(cuid())
+  adminId          String   @map("admin_id")
+  adminEmail       String   @map("admin_email")
+  action           String   // e.g. "PROMOTE_ADMIN", "REVOKE_ADMIN", "RERUN_PIPELINE"
+  targetUserId     String?  @map("target_user_id")
+  targetUserEmail  String?  @map("target_user_email")
+  details          String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("admin_audit_logs")
+  @@index([adminId])
+  @@index([createdAt])
+}
+

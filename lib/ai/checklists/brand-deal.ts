@@ -26,17 +26,17 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "payment-amount",
     category: "payment",
-    title: "Payment Amount & Currency Clarity",
+    title: "Agreed Payment & Currency",
     description:
       "What is the total fee and currency? All currencies (NGN, USD, GBP, EUR, etc.) are treated completely neutrally. Do NOT flag NGN or any currency as risky simply because it is a local currency or the counterparty is international. Only flag if the currency is ambiguous, unspecified, or requires conversion without specifying the exchange rate or conversion mechanism.",
     clauseKeywords: ["payment", "fee", "compensation", "remuneration", "rate", "amount", "currency", "₦", "$", "£", "€"],
     riskSignals: ["no currency specified", "amount unclear", "unspecified exchange rate", "missing conversion mechanism", "currency mismatch with stated costs", "subject to discretionary deduction"],
-    defaultSeverity: "understand",
+    defaultSeverity: "no_issue",
   },
   {
     id: "payment-schedule",
     category: "payment",
-    title: "Payment Schedule & Timing",
+    title: "Payment Schedule & Milestones",
     description:
       "When is payment due (e.g., within 7/14/30 days, net-30, net-60)? Flag extended payment windows (net-60+) or MISSING payment deadlines where payment timing is left undefined or tied to indefinite counterparty discretion.",
     clauseKeywords: ["payment", "due", "net", "invoice", "within", "days", "upon", "delivery", "publication", "schedule"],
@@ -46,9 +46,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "payment-kill-fee",
     category: "payment",
-    title: "Kill Fee / Cancellation Payment",
+    title: "Payment for Completed Work if Cancelled",
     description:
-      "If the brand or client cancels the engagement after work has started, is there a kill fee or partial payment for completed work? Flag when the contract allows unilateral cancellation without compensating for accrued work or non-refundable costs.",
+      "If the brand cancels the deal after work has started, do you get paid for completed drafts and work? Flag when the contract allows unilateral cancellation without compensating for accrued work or non-refundable costs.",
     clauseKeywords: ["kill fee", "cancellation", "termination", "partial payment", "kill", "cancel"],
     riskSignals: ["no payment on cancellation", "cancellation without compensation for work completed", "silent on cancellation compensation where cancellation is permitted"],
     defaultSeverity: "high",
@@ -56,7 +56,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "deliverables-scope",
     category: "deliverables",
-    title: "Deliverables & Scope Definition",
+    title: "Agreed Content Deliverables & Scope",
     description:
       "Are deliverables and specifications clearly defined? Flag open-ended scope language or missing mechanisms for additional compensation if the client requests work beyond agreed deliverables.",
     clauseKeywords: ["deliverable", "content", "post", "video", "story", "reel", "appear", "create", "produce", "scope"],
@@ -66,7 +66,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "deliverables-revisions",
     category: "deliverables",
-    title: "Revision Limits & Approval",
+    title: "Revision Limits (Number of Edits)",
     description:
       "How many rounds of revisions are included? Flag when the contract imposes open-ended revisions (e.g. 'until satisfied', 'at brand's discretion') WITHOUT specifying a clear revision round limit or fee for extra revisions.",
     clauseKeywords: ["revision", "amend", "change", "edit", "modify", "approval", "feedback", "rounds", "satisfied"],
@@ -76,7 +76,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "deliverables-approval",
     category: "deliverables",
-    title: "Approval Process & Timeline",
+    title: "Brand Approval & Review Timeline",
     description:
       "Does the brand have approval rights prior to publishing? Flag when approval has no deemed approval timeline, allowing indefinite delays that stall publication and payment.",
     clauseKeywords: ["approval", "approve", "review", "sign off", "sign-off", "prior to", "before posting", "timeline"],
@@ -86,7 +86,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "content-rights-grant",
     category: "content_rights",
-    title: "Content & IP Rights Grant",
+    title: "Brand Usage Rights for Your Content",
     description:
       "What usage rights does the brand receive? Flag disproportionate grants such as perpetual, irrevocable, worldwide, all-media licensing for a standard engagement.",
     clauseKeywords: ["license", "rights", "intellectual property", "IP", "copyright", "ownership", "assign", "grant", "perpetual", "irrevocable", "media"],
@@ -96,9 +96,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "content-rights-ownership",
     category: "content_rights",
-    title: "Content Ownership / Work for Hire",
+    title: "Content Ownership & Copyright Retention",
     description:
-      "Does the creator retain copyright with a license, or is it a 'work for hire' / full assignment of underlying IP and moral rights?",
+      "Do you retain copyright with a license, or does the brand own your raw and finished content outright as a 'work for hire'?",
     clauseKeywords: ["work for hire", "work-for-hire", "owns", "ownership", "copyright", "assigned to", "assignment", "moral rights"],
     riskSignals: ["work for hire", "full assignment of copyright", "brand owns all raw and finished footage", "waiver of moral rights"],
     defaultSeverity: "high",
@@ -106,9 +106,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "exclusivity",
     category: "exclusivity",
-    title: "Exclusivity Restrictions & Competitor Scope",
+    title: "Restrictions on Working with Competitors",
     description:
-      "Is the user restricted from working with other brands? Flag when exclusivity lacks a clear duration, has a vague/open-ended competitor definition, or extends far beyond the campaign term.",
+      "Are you restricted from working with other brands? Flag when exclusivity lacks a clear duration, has a vague/open-ended competitor definition, or extends far beyond the campaign term.",
     clauseKeywords: ["exclusive", "exclusivity", "competitor", "competing", "not work with", "prohibited", "restrict"],
     riskSignals: ["undefined exclusivity period", "vague competitor definition", "industry-wide category ban", "post-term exclusivity without additional compensation"],
     defaultSeverity: "high",
@@ -116,9 +116,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "termination-rights",
     category: "termination",
-    title: "Termination Rights & Notice",
+    title: "Contract Cancellation & Notice Period",
     description:
-      "Under what conditions can either party terminate? Flag one-sided immediate termination for convenience without reasonable notice.",
+      "Under what conditions can either party end the agreement? Flag one-sided immediate termination for convenience without reasonable notice.",
     clauseKeywords: ["terminat", "cancel", "end", "notice", "breach", "cure", "immediately", "convenience"],
     riskSignals: ["brand may terminate immediately without cause", "no cure period for minor breach", "one-sided termination for convenience"],
     defaultSeverity: "worth_reviewing",
@@ -126,7 +126,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "termination-effect",
     category: "termination",
-    title: "Effect of Termination on Completed Work",
+    title: "Payment for Delivered Work Upon Cancellation",
     description:
       "What happens to payment upon early termination? Flag when the agreement fails to protect payment for work already completed, delivered, or approved prior to termination.",
     clauseKeywords: ["terminat", "payment", "fee", "complet", "progress", "kill fee", "upon termination", "accrued"],
@@ -136,9 +136,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "liability-cap",
     category: "liability",
-    title: "Liability Limitation & Damages",
+    title: "Limits on Your Financial Liability",
     description:
-      "Is the user's liability capped (e.g. capped at the total fee received)? Flag unlimited liability, consequential damages exposure, or absence of any liability limit.",
+      "Is your liability capped (e.g. capped at the total fee received)? Flag unlimited liability, consequential damages exposure, or absence of any liability limit.",
     clauseKeywords: ["liability", "liable", "limit", "cap", "damages", "consequential", "indirect"],
     riskSignals: ["unlimited liability", "no liability cap", "liability includes indirect/consequential damages", "disproportionate exposure compared to deal value"],
     defaultSeverity: "high",
@@ -146,9 +146,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "indemnification",
     category: "liability",
-    title: "Indemnification Obligations & Scope",
+    title: "Responsibility for Legal Claims (Indemnity)",
     description:
-      "What must the user indemnify the client for? Flag one-sided, unbounded indemnification that lacks gross negligence/willful misconduct qualifiers or mutual protection.",
+      "What legal claims or costs are you required to cover for the brand? Flag one-sided, unbounded indemnification that lacks gross negligence/willful misconduct qualifiers or mutual protection.",
     clauseKeywords: ["indemnif", "hold harmless", "defend", "claims", "losses", "damages"],
     riskSignals: ["broad one-sided indemnity", "indemnification for client-provided materials", "no limit or fault qualifier on indemnity"],
     defaultSeverity: "worth_reviewing",
@@ -156,9 +156,9 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "image-likeness",
     category: "image_likeness",
-    title: "Name, Image & Likeness (NIL) Rights",
+    title: "Use of Your Name, Face & Likeness",
     description:
-      "Does the brand obtain rights to the creator's name, persona, voice, or likeness? Flag perpetual or unapproved commercial likeness exploitation.",
+      "Does the brand obtain rights to your name, persona, voice, or likeness? Flag perpetual or unapproved commercial likeness exploitation.",
     clauseKeywords: ["name", "image", "likeness", "voice", "persona", "appearance", "endorse", "NIL"],
     riskSignals: ["perpetual likeness rights", "use of likeness for unrelated brand marketing", "sublicensing likeness to third parties without approval"],
     defaultSeverity: "high",
@@ -166,7 +166,7 @@ export const BRAND_DEAL_CHECKLIST: ChecklistItem[] = [
   {
     id: "governing-law",
     category: "general",
-    title: "Governing Law & Dispute Resolution",
+    title: "Dispute Resolution & Governing Law",
     description:
       "Which jurisdiction and forum governs disputes? Flag burdensome or remote dispute resolution venues that make enforcement disproportionately costly.",
     clauseKeywords: ["governing law", "jurisdiction", "courts", "arbitration", "dispute", "venue"],

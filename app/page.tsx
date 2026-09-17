@@ -137,18 +137,17 @@ export default function HomePage() {
 
           <div className="flex items-center gap-2.5">
             <Link
-              href="/deals"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition"
+              href="/login"
+              className="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-950 transition"
             >
-              <span>📁</span>
-              <span>Your Deals</span>
+              Sign In
             </Link>
 
             <Link
-              href="/upload"
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.98] transition-all"
+              href="/signup"
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-slate-800 active:scale-[0.98] transition-all"
             >
-              <span>Review a Contract</span>
+              <span>Get Started</span>
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -169,29 +168,37 @@ export default function HomePage() {
 
             {/* Main Headline */}
             <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-6xl lg:text-7xl leading-[1.1]">
-              Know what you&apos;re signing{" "}
+              Understand Your Contract,{" "}
               <span className="text-blue-700 block mt-1">
-                before you sign away your rights.
+                Protect What Matters.
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-slate-600 font-normal">
-              Upload your agreement to uncover hidden risks in plain English, understand your trade-offs, and chat with <strong>Ask PactIQ</strong> to get ready-to-send negotiation emails in seconds.
+              Upload your agreement to uncover hidden risks in plain English, understand what you’re giving up, and develop a strategy for negotiating better terms.
+
+
             </p>
 
             {/* Action Buttons */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
               <Link
-                href="/upload"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 text-sm font-semibold text-white shadow-md hover:bg-slate-800 active:scale-[0.98] transition-all"
+                href="/signup"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 text-sm font-bold text-white shadow-md hover:bg-slate-800 active:scale-[0.98] transition-all"
               >
-                <span>Review a Contract</span>
+                <span>Continue with Google / Email</span>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
 
+              <Link
+                href="/login"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-800 hover:bg-slate-50 transition"
+              >
+                <span>Sign In to Workspace</span>
+              </Link>
             </div>
 
             {/* Trust Points */}
@@ -474,6 +481,18 @@ export default function HomePage() {
                       <h4 className="text-sm font-bold text-slate-900">Every Finding Backed by Real Text</h4>
                       <p className="mt-1 text-xs text-slate-600 leading-relaxed">
                         Every concern shows the exact clause it came from. If a claim isn&apos;t supported by the actual document text, we reject it immediately.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4 rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-800 font-bold text-sm">
+                      🛡️
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">Detects Missing Protections & Omissions</h4>
+                      <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                        Spots critical safeguards the other party left out—like deemed acceptance deadlines, kill fees, liability caps, or IP payment conditions—and gives you ready-to-copy proposed clauses.
                       </p>
                     </div>
                   </div>

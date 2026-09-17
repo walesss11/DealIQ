@@ -86,6 +86,8 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
   const cleanText = (str?: string | null) => {
     if (!str) return "";
     return str
+      .replace(/\bsection\s+(\d+|[IVXLCDM]+(?:\.[0-9a-z]+)*)/gi, "Clause $1")
+      .replace(/\bsections\s+(\d+|[IVXLCDM]+(?:\.[0-9a-z]+)*)/gi, "Clauses $1")
       .replace(/\*\*(.*?)\*\*/g, "$1")
       .replace(/\*(.*?)\*/g, "$1")
       .replace(/__(.*?)__/g, "$1")
@@ -137,7 +139,7 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
             <button
               type="button"
               onClick={() => askHandler(finding)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/80 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/80 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95 transition cursor-pointer"
             >
               <span>✨</span>
               <span>Ask PactIQ</span>
@@ -155,7 +157,7 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
           <button
             type="button"
             onClick={() => setActiveTab("analysis")}
-            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 transition ${
+            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 transition cursor-pointer ${
               activeTab === "analysis"
                 ? "border-slate-900 text-slate-950 font-bold"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -166,7 +168,7 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
           <button
             type="button"
             onClick={() => setActiveTab("negotiate")}
-            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition ${
+            className={`pb-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === "negotiate"
                 ? "border-blue-600 text-blue-700 font-bold"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -266,7 +268,7 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
                 <button
                   type="button"
                   onClick={() => handleCopy(cleanRewrite, "rewrite")}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-white border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-800 shadow-xs hover:bg-blue-50 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white border border-blue-200 px-3 py-1.5 text-xs font-semibold text-blue-800 shadow-xs hover:bg-blue-50 active:scale-95 transition cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -290,7 +292,7 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
                 <button
                   type="button"
                   onClick={() => handleCopy(cleanEmail, "email")}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -321,15 +323,15 @@ export function FindingCard({ finding, index, onAskPactIQ, onAskDealIQ, onAskCla
         </summary>
         <div className="mt-3 border-t border-slate-200 pt-3">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] font-mono font-semibold text-slate-500">
-              {finding.clause.section || finding.clause.title || `Clause #${finding.clause.position + 1}`}
+            <p className="text-[11px] font-mono font-semibold text-slate-600">
+              {(finding.clause.title || finding.clause.section || `Document Text (Page ${finding.clause.pageNumber || 1})`).replace(/\bsection\s+(\d+|[IVXLCDM]+(?:\.[0-9a-z]+)*)/gi, "Clause $1")}
               {finding.clause.pageNumber ? ` · Page ${finding.clause.pageNumber}` : ""}
             </p>
             {onAskClause && (
               <button
                 type="button"
                 onClick={() => onAskClause(finding.clause)}
-                className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline"
+                className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline cursor-pointer"
               >
                 Ask PactIQ about this clause →
               </button>

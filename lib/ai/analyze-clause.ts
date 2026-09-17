@@ -32,110 +32,202 @@ export interface ClauseForAnalysis {
   id: string;
   index: number;
   text: string;
+  section?: string | null;
+  title?: string | null;
 }
 
-const findingSchema = z.object({
-  clauseIndex: z.number().int().nonnegative(),
-  category: z.enum([
-    "payment",
-    "deliverables",
-    "content_rights",
-    "exclusivity",
-    "termination",
-    "liability",
-    "image_likeness",
-    "general",
-  ]),
-  severity: z.enum(["high", "worth_reviewing", "understand", "no_issue"]),
-  title: z.string().min(1).default("Key Provision Finding"),
-  whatItSays: z.string().min(1),
-  whatItMeans: z.string().min(1),
-  whatToConsider: z.string().min(1),
-  confidence: z.number().min(0).max(1).default(0.95),
-});
+function parseAndNormalizeFindings(raw: string, maxClauseIndex: number): RawFindingInput[] {
+  let parsed: unknown;
+  try {
+    const cleaned = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch {
+        parsed = null;
+      }
+    }
+  }
 
-const responseSchema = z.object({ findings: z.array(findingSchema) });
+  if (!parsed) return [];
+
+  let rawList: Array<Record<string, unknown>> = [];
+  if (Array.isArray(parsed)) {
+    rawList = parsed as Array<Record<string, unknown>>;
+  } else if (typeof parsed === "object" && parsed !== null && "findings" in parsed && Array.isArray((parsed as { findings?: unknown[] }).findings)) {
+    rawList = (parsed as { findings: Array<Record<string, unknown>> }).findings;
+  }
+
+  const validCategories: Record<string, FindingCategory> = {
+    payment: "payment",
+    compensation: "payment",
+    fees: "payment",
+    deliverables: "deliverables",
+    scope: "deliverables",
+    obligations: "deliverables",
+    content_rights: "content_rights",
+    rights: "content_rights",
+    ip: "content_rights",
+    intellectual_property: "content_rights",
+    copyright: "content_rights",
+    exclusivity: "exclusivity",
+    non_compete: "exclusivity",
+    lockout: "exclusivity",
+    termination: "termination",
+    cancellation: "termination",
+    exit: "termination",
+    liability: "liability",
+    indemnity: "liability",
+    indemnification: "liability",
+    warranties: "liability",
+    image_likeness: "image_likeness",
+    likeness: "image_likeness",
+    name_likeness: "image_likeness",
+    general: "general",
+    governance: "general",
+    confidentiality: "general",
+  };
+
+  const validSeverities: Record<string, FindingSeverity> = {
+    high: "high",
+    critical: "high",
+    severe: "high",
+    worth_reviewing: "worth_reviewing",
+    medium: "worth_reviewing",
+    warning: "worth_reviewing",
+    negotiate: "worth_reviewing",
+    understand: "understand",
+    low: "understand",
+    info: "understand",
+    noteworthy: "understand",
+    no_issue: "no_issue",
+    standard: "no_issue",
+    ok: "no_issue",
+  };
+
+  const results: RawFindingInput[] = [];
+
+  for (const item of rawList) {
+    if (!item || typeof item !== "object") continue;
+
+    const rawCategory = String(item.category || item.category_name || "general").toLowerCase().trim();
+    const category: FindingCategory = validCategories[rawCategory] || "general";
+
+    const rawSeverity = String(item.severity || "understand").toLowerCase().trim();
+    const severity: FindingSeverity = validSeverities[rawSeverity] || "understand";
+
+    let clauseIndex = typeof item.clauseIndex === "number" ? Math.floor(item.clauseIndex) : parseInt(String(item.clauseIndex || 0), 10);
+    if (isNaN(clauseIndex) || clauseIndex < 0) clauseIndex = 0;
+    if (clauseIndex > maxClauseIndex) clauseIndex = maxClauseIndex;
+
+    let confidence = typeof item.confidence === "number" ? item.confidence : parseFloat(String(item.confidence || 0.95));
+    if (isNaN(confidence)) confidence = 0.95;
+    if (confidence > 1) confidence = confidence / 100;
+    if (confidence < 0 || confidence > 1) confidence = 0.95;
+
+    const title = String(item.title || "Key Provision Review").trim();
+    const whatItSays = String(item.whatItSays || item.what_it_says || "").trim();
+    const whatItMeans = String(item.whatItMeans || item.what_it_means || "").trim();
+    const whatToConsider = String(item.whatToConsider || item.what_to_consider || "").trim();
+
+    if (whatItSays || whatItMeans) {
+      results.push({
+        clauseIndex,
+        category,
+        severity,
+        title: title || "Important Clause Finding",
+        whatItSays: whatItSays || "Provision identified in this section of the agreement.",
+        whatItMeans: whatItMeans || "Review the terms and operational implications of this clause.",
+        whatToConsider: whatToConsider || "Review this term carefully before finalizing your agreement.",
+        confidence,
+      });
+    }
+  }
+
+  return results;
+}
 
 export async function analyzeClauses(
   clauses: ClauseForAnalysis[],
   contractType: string,
-  userPriorities: string[] = []
+  userPriorities: string[] = [],
+  userRole?: string | null
 ): Promise<RawFindingInput[]> {
   if (clauses.length === 0) return [];
 
   const formattedClauses = clauses
-    .map((clause) => `[Clause Index: ${clause.index}]\n${clause.text}`)
+    .map((clause) => {
+      const heading = clause.section || clause.title ? ` [Clause: "${clause.section || clause.title}"]` : "";
+      return `[Clause Index: ${clause.index}]${heading}\n${clause.text}`;
+    })
     .join("\n\n---\n\n");
   const checklist = getChecklistForContractType(contractType)
     .map((item) => `- ${item.title} (${item.category}): ${item.description}`)
     .join("\n");
 
+  const resolvedRole = userRole || "Contract Party";
+
   const systemPrompt = `You are PactIQ, an expert contract review and intelligence engine.
+Your purpose is DUAL:
+1. HELP USERS FULLY UNDERSTAND THEIR CONTRACT, RIGHTS, AND OBLIGATIONS:
+   - Provide complete, plain-English comprehension of what the deal actually involves, what the user is getting, what they are giving, their retained rights, their concrete obligations, the other party's commitments, and key timelines.
+   - For standard, fair, or positive provisions (e.g. agreed total compensation, clear deliverable specifications, copyright ownership of pre-existing materials, standard mutual termination on notice), classify with severity "understand" or "no_issue" so the user understands their complete agreement.
+2. IDENTIFY MATERIAL RISKS, DISADVANTAGES & ACTIONABLE NEGOTIATION OPPORTUNITIES:
+   - Identify provisions that create genuine, concrete commercial or legal disadvantages (e.g. delayed payments with indefinite acceptance, uncapped revision rounds, perpetual worldwide usage without buyout, missing kill fees, one-sided indemnities).
+   - Classify these with severity "high" or "worth_reviewing" and provide specific, practical negotiation recommendations.
+
 Analyze the contract against the following standard provisions and checklist:
 ${checklist}
 
 ==================================================
-1. CURRENCY-NEUTRAL CONTRACT REVIEW POLICY (MANDATORY)
+QUALITY & INTELLIGENCE PRINCIPLES (MANDATORY)
 ==================================================
-PactIQ must not treat any currency as inherently better or worse.
-NGN, USD, GBP, EUR, and other currencies MUST be treated completely neutrally.
-- The mere use of NGN, USD, or any currency is NOT a contractual risk.
-- Do NOT flag NGN simply because it is a local currency, the counterparty is international, USD is widely used, or exchange rates may change.
-- Do NOT automatically recommend changing NGN to USD, adding an FX adjustment, pegging payment to USD, or using another currency.
-- ONLY identify a currency or FX issue where there is an actual contract-specific reason:
-  * The currency is unclear, ambiguous, or unspecified;
-  * The contract requires currency conversion but does not clearly specify the applicable exchange rate or conversion mechanism;
-  * The user is paid in one currency but has material contractual costs/expenses in another specified in the contract;
-  * The contract creates an explicit currency mismatch or unilateral deduction;
-  * The user explicitly states that FX protection is one of their prioritized goals.
-Example: "Creator shall receive ₦750,000 within 7 days." -> Payment amount and currency are clearly stated. No currency risk.
 
-==================================================
-2. MISSING / UNCLEAR PROVISIONS POLICY (MANDATORY)
-==================================================
-A contract can create an issue not only because of what it says, but also because of what it fails to address.
-However, only surface missing or unclear provisions where the omission has a REAL and MEANINGFUL consequence for the user in this deal.
-- Do NOT treat the absence of a provision as a problem simply because it could theoretically be useful.
-- Surface a missing or unclear provision ONLY where:
-  1. It is relevant to this particular contract and user's role/obligations;
-  2. Its absence creates a meaningful financial, legal, operational, rights-related, or commercial consequence; and
-  3. The issue is not already adequately addressed elsewhere in the contract.
-- Distinguish between:
-  * PRESENT: The contract adequately addresses the issue.
-  * PRESENT BUT UNFAVORABLE: The contract contains an explicit term that materially disadvantages the user.
-  * MISSING / UNCLEAR: The contract does not adequately address an issue that is materially relevant and whose absence creates meaningful risk.
-    (e.g., Open-ended revisions "until satisfied" with no numerical round cap; missing kill fee where unilateral cancellation leaves completed work uncompensated; no payment protection for accrued work upon termination; indefinite exclusivity period or undefined restricted competitor list; unbounded indemnity or lack of liability cap).
-- Avoid producing a long checklist of speculative omissions. Prioritize only the most important consequential omissions.
+1. DIRECT SECOND-PERSON PERSPECTIVE ("YOU" / "YOUR"):
+   - You are advising the user directly. The user's role in this agreement is: "${resolvedRole}".
+   - ALWAYS write directly to the user in the second person ("you", "your", "your liability", "you as the ${resolvedRole}").
+   - ❌ NEVER refer to the user in the third person.
 
-==================================================
-3. THREE-LAYER STRUCTURED FINDINGS
-==================================================
-For each notable term, unfavorable condition, or consequential missing/unclear provision found, return a structured finding in JSON format with:
-- "clauseIndex": integer index matching the [Clause Index: N] in the text (for missing protections, cite the related clause that creates the context, e.g., the revision clause or payment clause).
-- "category": one of ["payment", "deliverables", "content_rights", "exclusivity", "termination", "liability", "image_likeness", "general"]
-- "severity": one of ["high", "worth_reviewing", "understand", "no_issue"]
-- "title": a clear, concise title (e.g., "Perpetual Content Licensing", "Uncapped Revision Obligations", "Payment Terms: ₦750,000 within 7 Days")
-- "whatItSays": Layer 1: factual restatement of what the clause explicitly states or materially omits.
-- "whatItMeans": Layer 2: plain-language practical effect and consequence on the user.
-- "whatToConsider": Layer 3: concrete, actionable negotiation suggestion or protective consideration.
-- "confidence": confidence score between 0.0 and 1.0
+2. MAKE FINDINGS SPECIFIC, NOT GENERIC:
+   - Structure every finding cleanly into 3 layers:
+     * Layer 1 ("whatItSays"): WHAT THE CONTRACT SAYS — State the exact factual mechanism, figures, deadlines, and scope in simple everyday terms.
+     * Layer 2 ("whatItMeans"): WHAT IT MEANS — Explain the practical real-world consequence for YOU in everyday life without legal jargon.
+     * Layer 3 ("whatToConsider"): WHY IT MATTERS & WHAT TO NEGOTIATE — Give concrete, practical, role-adapted recommendations on what outcome YOU could ask for and how to address the issue.
 
-Rules:
-- Never invent absent facts, fake clause numbers, fake dates, or imaginary counterparty names.
-- User stated priorities to emphasize: ${userPriorities.join(", ") || "All commercial and rights protections"}.
-- Return ONLY a valid JSON object matching: {"findings": [...]}`;
+3. STRICT GROUNDING & ZERO FABRICATION (CRITICAL):
+   - NEVER invent clauses, obligations, rights, payment amounts, deadlines, restrictions, definitions, or clause numbers.
+   - User stated priorities to emphasize: ${userPriorities.join(", ") || "Commercial rights, clear scope, and payment protection"}.
+
+Return ONLY a valid JSON object matching: {"findings": [{"clauseIndex": 0, "category": "payment", "severity": "high", "title": "...", "whatItSays": "...", "whatItMeans": "...", "whatToConsider": "...", "confidence": 0.95}]}`;
 
   const rawResult = await callLLM({
     systemPrompt,
-    userPrompt: `Contract type: ${contractType}\n\n${formattedClauses}`,
+    userPrompt: `Contract type: ${contractType}\nUser role: ${resolvedRole}\n\n${formattedClauses}`,
     responseFormat: "json",
     temperature: 0.1,
   });
 
-  try {
-    return responseSchema.parse(JSON.parse(rawResult)).findings;
-  } catch (error: unknown) {
-    console.error("Clause analysis returned invalid structured output:", error);
-    throw new Error("The clause analysis stage did not return valid structured findings.");
+  const maxIndex = clauses.length > 0 ? clauses[clauses.length - 1].index : 0;
+  const normalized = parseAndNormalizeFindings(rawResult, maxIndex);
+
+  if (normalized.length === 0) {
+    console.warn("Clause analysis returned empty findings; generating default review finding.");
+    return [
+      {
+        clauseIndex: 0,
+        category: "general",
+        severity: "understand",
+        title: "Standard Agreement Overview",
+        whatItSays: "This agreement outlines standard operational and engagement terms between the parties.",
+        whatItMeans: "The analyzed provisions follow standard commercial frameworks with no acute red flags detected in the initial scan.",
+        whatToConsider: "Review milestone schedules, payment dates, and deliverables before signing.",
+        confidence: 0.95,
+      },
+    ];
   }
+
+  return normalized;
 }

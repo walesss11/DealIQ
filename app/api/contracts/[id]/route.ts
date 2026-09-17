@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentUser } from "@/lib/auth/session";
 import { deleteContractCompletely, ensureCascadeConstraints } from "@/lib/db/chatDb";
 import { prisma } from "@/lib/db/prisma";
 import { storage } from "@/lib/storage/client";
@@ -20,6 +21,11 @@ export async function GET(
   const { id } = await params;
 
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const contract = await prisma.contract.findUnique({
       where: { id },
       include: {
@@ -43,7 +49,10 @@ export async function GET(
       },
     });
 
-    if (!contract) return NextResponse.json({ error: "Contract not found." }, { status: 404 });
+    if (!contract || (contract.userId && contract.userId !== user.id)) {
+      return NextResponse.json({ error: "Contract not found." }, { status: 404 });
+    }
+
     const version = contract.versions[0];
     if (!version) return NextResponse.json({ error: "Contract version not found." }, { status: 404 });
 
@@ -91,6 +100,11 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // 1. Fetch versions to clean up storage files
     const contract = await prisma.contract.findUnique({
       where: { id },
@@ -99,7 +113,7 @@ export async function DELETE(
       },
     });
 
-    if (!contract) {
+    if (!contract || (contract.userId && contract.userId !== user.id)) {
       return NextResponse.json({ error: "Contract not found." }, { status: 404 });
     }
 
@@ -125,4 +139,5 @@ export async function DELETE(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
 

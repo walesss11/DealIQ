@@ -293,7 +293,7 @@ export function RedraftModal({
                               : "Understand"}
                           </span>
                           <span className="text-[11px] font-mono text-slate-500">
-                            {finding.clause.section || finding.clause.title || `Clause #${finding.clause.position + 1}`}
+                            {finding.clause.title || finding.clause.section || `Document Paragraph ${finding.clause.pageNumber ? `(Page ${finding.clause.pageNumber})` : ""}`}
                           </span>
                         </div>
                         <p className="mt-1 text-xs text-slate-600 leading-relaxed">

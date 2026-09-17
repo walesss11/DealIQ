@@ -16,6 +16,8 @@ export interface NegotiationPackage {
 export function stripMarkdown(text: string): string {
   if (!text) return "";
   return text
+    .replace(/\bsection\s+(\d+|[IVXLCDM]+(?:\.[0-9a-z]+)*)/gi, "Clause $1")
+    .replace(/\bsections\s+(\d+|[IVXLCDM]+(?:\.[0-9a-z]+)*)/gi, "Clauses $1")
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/\*(.*?)\*/g, "$1")
     .replace(/__(.*?)__/g, "$1")
@@ -44,34 +46,41 @@ export async function generateNegotiation(
   whatItMeans: string,
   whatToConsider: string,
   contractType: string,
-  clauseSection?: string
+  clauseReferenceInput?: string
 ): Promise<NegotiationPackage> {
-  const sectionReference = clauseSection || "this clause";
+  const clauseReference = clauseReferenceInput || "this clause";
 
-  const systemPrompt = `You are PactIQ's expert contract negotiation assistant.
-Your goal is to provide practical, professional, balanced negotiation alternatives for creators and professionals.
+  const systemPrompt = `You are PactIQ's expert contract negotiation strategist.
+Your goal is to provide specific, practical, realistic negotiation options, balanced contract rewrites, and ready-to-send counter-proposals for professionals and creators.
 
-CRITICAL FORMATTING & CONTENT RULES:
+CRITICAL FORMATTING & NEGOTIATION RULES:
 1. NO MARKDOWN FORMATTING: Do NOT use markdown syntax such as asterisks (**bold**, *italic*), hashtags (#, ##, ###), or backticks. Output clean, plain professional text only.
-2. REFER TO CLAUSE NUMBERS / SECTIONS: In both the suggestedWording and emailSnippet, explicitly reference the specific clause number or section (e.g., "Regarding ${sectionReference}...", "In ${sectionReference}..."). Do not use generic references without the clause number or section.
-3. CURRENCY NEUTRALITY: Treat all currencies (NGN, USD, GBP, EUR, etc.) neutrally. Do NOT recommend switching to USD or pegging to foreign currencies unless the specific finding identified an actual contract ambiguity or conversion defect.
-4. MISSING PROVISIONS: If the finding addresses a missing protection (e.g. revision limits, kill fee, payment milestone protection), provide a clear, balanced clause insertion establishing fair boundaries (e.g. 2 revision rounds, 30-day payment timeline).
-5. Provide 2 to 4 concrete tactical negotiation options.
-6. Provide clean "suggestedWording" that replaces or amends the problematic clause in professional contract language without markdown.
-7. Provide a polite, ready-to-paste "emailSnippet" referencing ${sectionReference} in a friendly, constructive, professional tone without markdown.
+2. GROUNDED IN THE SPECIFIC PROVISION: Reference the exact clause heading or citation (${clauseReference}). Address the precise contractual mechanism (e.g., acceptance window, payment milestone, revision cap, IP license term, liability cap).
+3. PRACTICAL TACTICAL OPTIONS (2 to 4 items):
+   - Provide concrete, realistic alternatives for the user's internal strategy.
+   - Weak: "Ask for better terms."
+   - Strong: "Option 1: Add a 5-business-day deemed acceptance period. Option 2: Tie final milestone to deliverable submission rather than discretionary approval."
+4. BALANCED CONTRACT REWRITE ("suggestedWording"):
+   - Provide professional, clean replacement contract language that fairly protects the user while remaining reasonable for the counterparty.
+   - Use clear, modern drafting language rather than dense archaic legalese.
+5. READY-TO-SEND COUNTERPARTY EMAIL ("emailSnippet"):
+   - Written in the FIRST PERSON ("I", "my", "we") speaking DIRECTLY to the other party / client ("you", "your team").
+   - NEVER write advisory coaching or third-person instructions to the user.
+   - USE SIMPLE, PLAIN, PROFESSIONAL LANGUAGE: Clear, calm, approachable, and respectful. Avoid legal jargon or aggressive tone.
+   - Example: "Hi [Name], regarding ${clauseReference}, could we please adjust this so that deliverables are deemed accepted within 5 business days of submission? This helps keep project timelines on schedule while ensuring you have ample time to review."
 
 Return ONLY a valid JSON object matching:
 {
   "options": [
-    { "option": "Short action title", "rationale": "Why this protects the user" }
+    { "option": "Specific action proposal", "rationale": "Commercial protection achieved" }
   ],
-  "suggestedWording": "Exact replacement or addendum contract text referencing ${sectionReference}...",
-  "emailSnippet": "Hi [Name], regarding ${sectionReference}, could we adjust..."
-}`;
+  "suggestedWording": "Clean balanced contract wording referencing ${clauseReference}...",
+  "emailSnippet": "Hi [Name], regarding ${clauseReference}, could we please update this provision to specify..."
+} `;
 
   const userPrompt = `Contract Type: ${contractType}
 Finding Title: ${findingTitle}
-Clause Section / Number: ${sectionReference}
+Clause Reference: ${clauseReference}
 Original Clause Text:
 "${clauseText}"
 
@@ -99,6 +108,16 @@ Consideration: ${whatToConsider}`;
     };
   } catch (error: unknown) {
     console.error(`Failed to generate negotiation for ${findingTitle}:`, error);
+
+    let proposal = stripMarkdown(whatToConsider);
+    proposal = proposal
+      .replace(/^Negotiate (to include|for) /i, "include ")
+      .replace(/^Negotiate /i, "adjust this to ")
+      .replace(/^Introduce /i, "specify ")
+      .replace(/^Request /i, "ask for ")
+      .replace(/^Ensure /i, "ensure that ")
+      .replace(/^Add /i, "add ");
+
     return {
       findingTitle: stripMarkdown(findingTitle),
       options: [
@@ -111,8 +130,8 @@ Consideration: ${whatToConsider}`;
           rationale: "Clarifies boundaries before work commences.",
         },
       ],
-      suggestedWording: `[Suggested Revision for ${sectionReference}]: ${stripMarkdown(whatToConsider)}`,
-      emailSnippet: `Hi team, regarding ${sectionReference}, could we please update this provision to reflect ${stripMarkdown(whatToConsider).toLowerCase()}? Thanks!`,
+      suggestedWording: `[Suggested Revision for ${clauseReference}]: ${stripMarkdown(whatToConsider)}`,
+      emailSnippet: `Hi [Name], regarding ${clauseReference}, could we please update this provision so we can ${proposal.charAt(0).toLowerCase() + proposal.slice(1)}? Thanks!`,
     };
   }
 }

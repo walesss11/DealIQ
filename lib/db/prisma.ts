@@ -8,16 +8,16 @@ function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
+export function resetPrismaClient(): void {
+  globalForPrisma.prisma = undefined;
+}
+
 function getPrismaClient(): PrismaClient {
-  if (
-    !globalForPrisma.prisma ||
-    !("conversation" in globalForPrisma.prisma) ||
-    !(globalForPrisma.prisma as unknown as Record<string, unknown>).conversation
-  ) {
+  if (!globalForPrisma.prisma) {
     globalForPrisma.prisma = createPrismaClient();
   }
   return globalForPrisma.prisma;
@@ -33,3 +33,4 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
     return value;
   },
 });
+

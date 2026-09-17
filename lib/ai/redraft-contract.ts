@@ -106,17 +106,17 @@ Return ONLY a valid JSON object matching:
   "changes": [
     {
       "clauseId": "exact-clause-id",
-      "section": "Section 4 (IP License)",
+      "section": "[Exact Clause label from selected change request]",
       "originalText": "exact original clause snippet",
       "revisedText": "new balanced clause snippet",
-      "rationale": "Limited perpetual license to a 12-month commercial term."
+      "rationale": "Concise explanation of the balanced revision made."
     }
   ],
   "revisedFullText": "Full complete text of the redrafted contract...",
   "consistencyNotes": [
-    "Defined terms verified across all sections",
-    "Preserved original Section 1-12 numbering without alteration",
-    "Updated Section 4 usage rights to match the agreed 1-year window"
+    "Defined terms verified across all clauses",
+    "Preserved original document numbering and headings without alteration",
+    "Harmonized amended provisions with remaining contract obligations"
   ]
 }`;
 
@@ -130,7 +130,7 @@ ${selectedFindings
     (sf, idx) => `
 [Change Request #${idx + 1}]
 - Clause ID: ${sf.clauseId}
-- Section: ${sf.clause.section || sf.clause.title || "Section"}
+- Clause: ${sf.clause.section || sf.clause.title || "Clause"}
 - Issue Title: ${sf.title}
 - Original Clause Text:
 """
@@ -166,7 +166,7 @@ ${fullOriginalText}
     for (const sf of selectedFindings) {
       const originalClause = sf.clause.text;
       const rewrite = sf.suggestedRewrite || sf.whatToConsider;
-      const sectionName = sf.clause.section || sf.clause.title || `Clause #${(sf.clause.position || 0) + 1}`;
+      const sectionName = sf.clause.section || sf.clause.title || sf.title || "Contract Provision";
 
       if (rewrite && originalClause) {
         changes.push({

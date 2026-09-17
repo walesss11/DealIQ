@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const roles = [
   {
@@ -127,6 +127,43 @@ export default function UploadPage() {
   const [stageIndex, setStageIndex] = useState(0);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [billingStatus, setBillingStatus] = useState<{ hasFreeReview: boolean; freeReviewUsed: boolean; priceNGN: number } | null>(null);
+
+  // Load user profile & onboarding preferences and billing status
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [meRes, billingRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/payments/status"),
+        ]);
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.authenticated && meData.user) {
+            if (meData.user.userRole && !role) {
+              setRole(meData.user.userRole);
+              const types = contractTypes[meData.user.userRole] ?? [];
+              if (types.length > 0 && !contractType) {
+                setContractType(types[0]);
+              }
+            }
+            if (Array.isArray(meData.user.priorities) && meData.user.priorities.length > 0 && selectedPriorities.length === 0) {
+              setSelectedPriorities(meData.user.priorities);
+            }
+          }
+        }
+
+        if (billingRes.ok) {
+          const billingData = await billingRes.json();
+          setBillingStatus(billingData);
+        }
+      } catch (e) {
+        console.warn("Could not load user or billing status:", e);
+      }
+    }
+    loadData();
+  }, []);
 
   const availableTypes = useMemo(() => contractTypes[role] ?? [], [role]);
   const isBusy = status !== "idle";
@@ -205,11 +242,11 @@ export default function UploadPage() {
       {/* Header */}
       <header className="border-b border-slate-200 bg-white sticky top-0 z-30">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+          <Link href="/dashboard" className="flex items-center gap-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span>Back to PactIQ</span>
+            <span>Back to Dashboard</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -233,9 +270,23 @@ export default function UploadPage() {
       <main className="mx-auto max-w-3xl px-6 py-10 sm:py-14">
         <div className="card-surface rounded-2xl p-6 sm:p-10">
           <div className="border-b border-slate-200 pb-6">
-            <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-              Contract Intake
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                Contract Intake
+              </span>
+              {billingStatus && (
+                billingStatus.hasFreeReview ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    1 Free Trial Review Available
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                    ₦5,000 per review (Paystack)
+                  </span>
+                )
+              )}
+            </div>
             <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950">
               Upload your agreement for review
             </h1>
@@ -469,6 +520,25 @@ export default function UploadPage() {
                 </p>
               </div>
             )}
+
+            {/* Pricing Note */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs text-slate-600 flex items-start gap-3">
+              <div className="text-base shrink-0 mt-0.5">
+                {billingStatus?.hasFreeReview ? "🎁" : "💳"}
+              </div>
+              <div className="space-y-0.5">
+                <p className="font-semibold text-slate-900">
+                  {billingStatus?.hasFreeReview
+                    ? "Free Trial Review Included"
+                    : "Pay-Per-Review via Paystack (₦5,000)"}
+                </p>
+                <p className="text-slate-500 leading-relaxed">
+                  {billingStatus?.hasFreeReview
+                    ? "Your first contract review is completely free with full access to high-risk warnings and negotiation emails."
+                    : "Your free trial review has been used. You'll preview the detected risk counts before unlocking complete clause intelligence for ₦5,000."}
+                </p>
+              </div>
+            </div>
 
             {/* Submit Button */}
             <button
