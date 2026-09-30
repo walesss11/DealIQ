@@ -126,12 +126,9 @@ export default function HomePage() {
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-slate-950 transition-colors">How It Works</a>
-            <a href="#ask-pactiq" className="hover:text-slate-950 transition-colors flex items-center gap-1.5">
-              <span>Ask PactIQ AI</span>
-              <span className="rounded bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-700">NEW</span>
-            </a>
-            <a href="#features" className="hover:text-slate-950 transition-colors">What We Spot</a>
+            <a href="#ask-pactiq" className="hover:text-slate-950 transition-colors">Ask PactIQ AI</a>
             <a href="#audiences" className="hover:text-slate-950 transition-colors">Who It&apos;s For</a>
+            <a href="#pricing" className="hover:text-slate-950 transition-colors">Pricing</a>
             <a href="#security" className="hover:text-slate-950 transition-colors">Privacy & Security</a>
           </nav>
 
@@ -373,7 +370,7 @@ export default function HomePage() {
                 ✨ Meet Ask PactIQ
               </span>
               <h2 className="mt-4 text-3xl font-extrabold text-slate-950 sm:text-5xl tracking-tight leading-tight">
-                An AI assistant that has already read your entire contract.
+                AI assistant built to help you negotiate better terms.
               </h2>
               <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
                 <strong>Ask PactIQ</strong> is built directly on top of your contract review. It understands your specific agreement, your role, and your priorities—giving you clear answers and drafting ready-to-send negotiation emails on the spot.
@@ -539,8 +536,136 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Section: Multi-Version Deal Tracker */}
+        <section id="version-tracker" className="border-t border-slate-200 bg-white px-6 py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-12 lg:items-center">
+              <div className="lg:col-span-5 space-y-6">
+                <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  Negotiation Lifecycle
+                </span>
+                <h2 className="text-3xl font-extrabold text-slate-950 sm:text-4xl tracking-tight leading-tight">
+                  Negotiate version by version without losing track.
+                </h2>
+                <p className="text-sm sm:text-base leading-relaxed text-slate-600">
+                  Contracts are rarely signed on the first draft. When the other party replies with a revised agreement, PactIQ automatically analyzes what changed, what was fixed, and what new terms were introduced.
+                </p>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-start gap-3.5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
+                      ✓
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-950">Status of Previous Concerns</h4>
+                      <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">
+                        Tracks whether your previous negotiation points were Addressed, Partially Addressed, or left Unresolved.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3.5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-800 font-bold text-xs">
+                      📝
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-950">Before & After Text Diffs</h4>
+                      <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">
+                        Side-by-side comparison of modified clauses so you don’t have to manually read through pages of legalese.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3.5 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-800 font-bold text-xs">
+                      🔄
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-950">Free Lifetime Deal Revisions</h4>
+                      <p className="mt-0.5 text-xs text-slate-600 leading-relaxed">
+                        Once an agreement is in your workspace, every subsequent draft (Version 2, 3, etc.) is included with zero extra cost.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mockup Display of Version Comparison View */}
+              <div className="lg:col-span-7">
+                <div className="card-surface rounded-2xl border border-slate-200 bg-slate-50/50 p-5 sm:p-7 shadow-lg space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse" />
+                      <span className="text-xs font-bold text-slate-900">Comparing Version 2 vs Version 1</span>
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                      Brand Sponsorship Agreement.docx
+                    </span>
+                  </div>
+
+                  {/* Summary Metric Counters */}
+                  <div className="grid grid-cols-3 gap-2.5 text-center">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
+                      <span className="text-xl font-black text-emerald-800">3</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-700 mt-0.5">Addressed</span>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+                      <span className="text-xl font-black text-amber-800">1</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-700 mt-0.5">Partially Fixed</span>
+                    </div>
+                    <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3">
+                      <span className="text-xl font-black text-rose-800">1</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-rose-700 mt-0.5">Unresolved</span>
+                    </div>
+                  </div>
+
+                  {/* Issue Evolution Sample Card */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                          ✓ ADDRESSED
+                        </span>
+                        <h5 className="text-xs font-bold text-slate-950">Exclusivity Period Shortened</h5>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">Clause 8.1</span>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 text-[11px]">
+                      <div className="rounded-lg bg-rose-50/50 border border-rose-200/80 p-2.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-rose-800 block">Version 1 (Before)</span>
+                        <p className="mt-1 text-slate-700 leading-relaxed font-mono">“180-day category lockout across all beverage brands.”</p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50/50 border border-emerald-300 p-2.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-900 block">Version 2 (Now)</span>
+                        <p className="mt-1 text-slate-900 leading-relaxed font-mono font-medium">“30-day lockout limited strictly to energy drinks.”</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Unresolved Item */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-800">
+                          ✗ STILL UNRESOLVED
+                        </span>
+                        <h5 className="text-xs font-bold text-slate-950">Net-60 Late Payment Terms</h5>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">Clause 3.2</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Counterparty kept 60-day payout delay. PactIQ recommends pushing for 50% upfront or Net-15.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Section: Audiences */}
-        <section id="audiences" className="border-t border-slate-200 bg-white px-6 py-20 sm:py-28">
+        <section id="audiences" className="border-t border-slate-200 bg-slate-50 px-6 py-20 sm:py-28">
           <div className="mx-auto max-w-7xl">
             <div className="text-center max-w-2xl mx-auto">
               <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -590,6 +715,139 @@ export default function HomePage() {
                   </Link>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Section: Transparent Pricing */}
+        <section id="pricing" className="border-t border-slate-200 bg-white px-6 py-20 sm:py-28">
+          <div className="mx-auto max-w-7xl">
+            <div className="text-center max-w-2xl mx-auto">
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                Transparent Pricing
+              </span>
+              <h2 className="mt-4 text-3xl font-extrabold text-slate-950 sm:text-4xl tracking-tight">
+                Simple, transparent pricing. Zero monthly subscriptions.
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+                Start with a complimentary review on us. Pay only when you need intelligence on a new contract, with all future revisions of that deal included for free.
+              </p>
+            </div>
+
+            <div className="mt-14 grid gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
+              {/* Card 1: 1 Free Trial Review */}
+              <div className="card-surface rounded-2xl border-2 border-slate-200 bg-white p-8 flex flex-col justify-between shadow-sm hover:border-slate-300 transition">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800">
+                      <span>🎁</span> First Contract
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">No card required</span>
+                  </div>
+
+                  <h3 className="mt-5 text-xl font-extrabold text-slate-950">Free Trial Review</h3>
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    Test the full power of PactIQ on your first agreement with 100% complete access.
+                  </p>
+
+                  <div className="mt-6 flex items-baseline gap-1 border-b border-slate-100 pb-6">
+                    <span className="text-4xl font-black text-slate-950 tracking-tight">₦0</span>
+                    <span className="text-xs text-slate-500 font-medium">/ 1 contract review</span>
+                  </div>
+
+                  <ul className="mt-6 space-y-3 text-xs text-slate-700">
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Full clause-by-clause intelligence</strong> and plain-English breakdown</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Missing safeguards detection</strong> (kill fees, liability caps, acceptance windows)</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Ready-to-send counter-offer emails</strong> & replacement wording</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Ask PactIQ AI chat</strong> grounded in your specific document</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Unlimited version comparisons</strong> included for this deal</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-8 pt-4">
+                  <Link
+                    href="/signup"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition"
+                  >
+                    <span>Start Your Free Review</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Card 2: Pay-Per-Review */}
+              <div className="card-surface rounded-2xl border-2 border-blue-600 bg-white p-8 flex flex-col justify-between shadow-md relative">
+                <div className="absolute -top-3 right-6 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-xs">
+                  Pay-As-You-Go
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-bold text-blue-800">
+                      <span>💳</span> Subsequent Reviews
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500">Paystack Secured</span>
+                  </div>
+
+                  <h3 className="mt-5 text-xl font-extrabold text-slate-950">Pay-Per-Review</h3>
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    Fair, transparent pricing for each new agreement. Never locked into expensive subscriptions.
+                  </p>
+
+                  <div className="mt-6 flex items-baseline gap-1 border-b border-slate-100 pb-6">
+                    <span className="text-4xl font-black text-slate-950 tracking-tight">₦5,000</span>
+                    <span className="text-xs text-slate-500 font-medium">/ per agreement</span>
+                  </div>
+
+                  <ul className="mt-6 space-y-3 text-xs text-slate-700">
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Everything in Free Trial Review</strong> with instant unlocking</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Free lifetime revisions</strong> for this deal (Version 2, 3, etc. are free)</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Multi-version delta comparison</strong> & concern resolution tracker</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Comprehensive negotiation package export</strong></span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="text-emerald-600 font-bold">✓</span>
+                      <span><strong>Supports Cards, Bank Transfers & USSD</strong> via Paystack</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="mt-8 pt-4">
+                  <Link
+                    href="/upload"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white shadow-xs hover:bg-blue-500 transition"
+                  >
+                    <span>Analyze a Contract (₦5,000)</span>
+                    <span>→</span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>
